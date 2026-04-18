@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Brain Battery — Cognitive Workload Monitor</title>
-  <meta name="description" content="Real-time cognitive workload monitor using EEG signals and a custom multimodal deep learning model. Demo and live Muse headband modes." />
+  <meta name="description" content="Real-time cognitive workload monitor using EEG signals and a custom multimodal deep learning model trained on the UNIVERSE dataset (24 subjects)." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
@@ -12,814 +12,913 @@
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --bg:       #0A0C10;
-      --bg2:      #0D0F14;
-      --green:    #00CC77;
-      --purple:   #A06EDC;
-      --white:    #FFFFFF;
-      --text:     #E5E7EB;
-      --muted:    #6B7280;
-      --dim:      #374151;
-      --border:   rgba(255,255,255,0.08);
-      --mono:     'DM Mono', monospace;
-      --sans:     'DM Sans', sans-serif;
+      --bg:      #0A0C10;
+      --bg2:     #0D0F14;
+      --green:   #00CC77;
+      --purple:  #A06EDC;
+      --orange:  #E09000;
+      --white:   #FFFFFF;
+      --text:    #E5E7EB;
+      --muted:   #6B7280;
+      --dim:     #374151;
+      --border:  rgba(255,255,255,0.08);
+      --mono:    'DM Mono', monospace;
+      --sans:    'DM Sans', sans-serif;
     }
 
     html { scroll-behavior: smooth; }
+    body { background: var(--bg); color: var(--text); font-family: var(--sans); line-height: 1.6; }
 
-    body {
-      background: var(--bg);
-      color: var(--text);
-      font-family: var(--sans);
-      line-height: 1.6;
-    }
-
-    /* ── NAV ── */
+    /* ══ NAV ══════════════════════════════════════════════════════════════ */
     nav {
-      position: fixed;
-      top: 0; left: 0; right: 0;
-      z-index: 100;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0 48px;
-      height: 60px;
+      position: fixed; top: 0; left: 0; right: 0; z-index: 200;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 48px; height: 64px;
       background: rgba(10,12,18,0);
       border-bottom: 1px solid rgba(255,255,255,0);
-      transition: background 0.3s, border-color 0.3s;
+      transition: background 0.4s, border-color 0.4s, backdrop-filter 0.4s;
     }
     nav.scrolled {
-      background: rgba(10,12,18,0.88);
+      background: rgba(10,12,18,0.85);
       border-bottom-color: rgba(255,255,255,0.07);
-      backdrop-filter: blur(20px);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
     }
     .nav-brand {
-      font-family: var(--mono);
-      font-size: 14px;
-      font-weight: 500;
-      letter-spacing: 0.12em;
-      color: var(--white);
-      text-decoration: none;
+      font-family: var(--mono); font-size: 13px; font-weight: 500;
+      letter-spacing: 0.14em; color: var(--white); text-decoration: none;
     }
-    .nav-links {
-      display: flex;
-      gap: 32px;
-      list-style: none;
-    }
+    .nav-links { display: flex; gap: 32px; list-style: none; }
     .nav-links a {
-      font-family: var(--mono);
-      font-size: 11px;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      color: var(--muted);
-      text-decoration: none;
+      font-family: var(--mono); font-size: 10px; letter-spacing: 0.12em;
+      text-transform: uppercase; color: var(--muted); text-decoration: none;
       transition: color 0.2s;
     }
     .nav-links a:hover { color: var(--white); }
-    .nav-cta {
-      display: flex;
-      gap: 12px;
-    }
+    .nav-cta { display: flex; gap: 10px; }
+
+    /* ══ BUTTONS ══════════════════════════════════════════════════════════ */
     .btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 7px;
-      padding: 8px 18px;
-      border-radius: 100px;
-      font-family: var(--mono);
-      font-size: 11px;
-      letter-spacing: 0.08em;
-      font-weight: 500;
-      text-decoration: none;
-      border: none;
-      cursor: pointer;
-      transition: opacity 0.2s, transform 0.2s;
+      display: inline-flex; align-items: center; gap: 7px;
+      padding: 9px 20px; border-radius: 100px;
+      font-family: var(--mono); font-size: 11px;
+      letter-spacing: 0.08em; font-weight: 500;
+      text-decoration: none; border: none; cursor: pointer;
+      transition: opacity 0.2s, transform 0.2s, box-shadow 0.2s;
     }
-    .btn:hover { opacity: 0.85; transform: translateY(-1px); }
+    .btn:hover { opacity: 0.88; transform: translateY(-1px); }
     .btn-ghost {
-      background: rgba(255,255,255,0.06);
-      color: var(--text);
+      background: rgba(255,255,255,0.06); color: var(--text);
       border: 1px solid rgba(255,255,255,0.12);
     }
-    .btn-green {
-      background: var(--green);
-      color: #000;
+    .btn-green  { background: var(--green);  color: #000; box-shadow: 0 0 20px rgba(0,204,119,0.25); }
+    .btn-purple { background: var(--purple); color: #fff; box-shadow: 0 0 20px rgba(160,110,220,0.25); }
+    .btn-outline {
+      background: transparent; color: var(--text);
+      border: 1px solid rgba(255,255,255,0.18);
     }
-    .btn-purple {
-      background: var(--purple);
-      color: #fff;
-    }
+    .btn-outline:hover { border-color: rgba(255,255,255,0.35); }
 
-    /* ── SECTIONS ── */
-    section { padding: 96px 48px; max-width: 1100px; margin: 0 auto; }
-
-    .section-label {
-      font-family: var(--mono);
-      font-size: 10px;
-      letter-spacing: 0.18em;
-      text-transform: uppercase;
-      color: var(--muted);
-      margin-bottom: 10px;
-      display: block;
-    }
-    h2 {
-      font-family: var(--mono);
-      font-size: 28px;
-      font-weight: 500;
-      color: var(--white);
-      letter-spacing: 0.02em;
-      margin-bottom: 16px;
-    }
-    .section-sub {
-      color: var(--muted);
-      font-size: 15px;
-      max-width: 600px;
-      margin-bottom: 48px;
-    }
-
-    /* ── HERO ── */
+    /* ══ HERO — full-viewport photo ══════════════════════════════════════ */
     #hero {
+      position: relative;
       min-height: 100vh;
       display: flex;
       flex-direction: column;
-      justify-content: center;
-      padding: 0 48px;
+      justify-content: flex-end;
+      overflow: hidden;
+    }
+    .hero-photo {
+      position: absolute; inset: 0;
+      background: #050709;          /* fallback if image not loaded */
+    }
+    /* User: drop your brain/BCI photo at docs/assets/hero.jpg to activate this */
+    .hero-photo img {
+      width: 100%; height: 100%;
+      object-fit: cover; object-position: center 30%;
+      display: block;
+      opacity: 0.55;
+    }
+    /* Deep gradient overlay — same feel as the app's dark background */
+    .hero-photo::after {
+      content: '';
+      position: absolute; inset: 0;
+      background:
+        linear-gradient(to bottom,
+          rgba(10,12,18,0.3) 0%,
+          rgba(10,12,18,0.1) 40%,
+          rgba(10,12,18,0.85) 75%,
+          rgba(10,12,18,1)   100%),
+        radial-gradient(ellipse 80% 60% at 20% 10%, rgba(0,204,119,0.08) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 50% at 80% 80%, rgba(160,110,220,0.1) 0%, transparent 55%);
+    }
+    /* Animated EEG traces over the photo */
+    .hero-eeg-svg {
+      position: absolute; bottom: 0; left: 0; right: 0;
+      height: 200px; z-index: 2; opacity: 0.22; pointer-events: none;
+    }
+    .eeg-path {
+      stroke-dasharray: 3000;
+      stroke-dashoffset: 3000;
+      animation: eegDraw 4s cubic-bezier(0.4,0,0.2,1) forwards;
+    }
+    .eeg-path:nth-child(2) { animation-delay: 0.5s; }
+    .eeg-path:nth-child(3) { animation-delay: 1s; }
+    .eeg-path:nth-child(4) { animation-delay: 1.5s; }
+    @keyframes eegDraw { to { stroke-dashoffset: 0; } }
+
+    .hero-content {
+      position: relative; z-index: 10;
+      padding: 0 72px 80px;
       max-width: 1100px;
-      margin: 0 auto;
-      position: relative;
     }
     .hero-eyebrow {
-      font-family: var(--mono);
-      font-size: 11px;
-      letter-spacing: 0.2em;
-      text-transform: uppercase;
-      color: var(--green);
-      margin-bottom: 20px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
+      font-family: var(--mono); font-size: 11px;
+      letter-spacing: 0.2em; text-transform: uppercase;
+      color: var(--green); margin-bottom: 20px;
+      display: flex; align-items: center; gap: 12px;
+      animation: fadeUp 0.8s ease both;
     }
     .hero-eyebrow::before {
-      content: '';
-      display: inline-block;
-      width: 32px;
-      height: 1px;
-      background: var(--green);
+      content: ''; width: 32px; height: 1px; background: var(--green); display: inline-block;
     }
     h1 {
       font-family: var(--mono);
-      font-size: clamp(40px, 7vw, 80px);
-      font-weight: 400;
-      line-height: 1.05;
-      letter-spacing: -0.01em;
-      color: var(--white);
-      margin-bottom: 24px;
+      font-size: clamp(44px, 6.5vw, 84px);
+      font-weight: 400; line-height: 1.04; letter-spacing: -0.01em;
+      color: var(--white); margin-bottom: 22px;
+      animation: fadeUp 0.8s 0.1s ease both;
     }
-    h1 span { color: var(--green); }
+    h1 em { color: var(--green); font-style: normal; }
     .hero-sub {
-      font-size: 17px;
-      color: var(--muted);
-      max-width: 520px;
-      line-height: 1.75;
-      margin-bottom: 40px;
+      font-size: 17px; color: rgba(229,231,235,0.7);
+      max-width: 540px; line-height: 1.75; margin-bottom: 36px;
+      animation: fadeUp 0.8s 0.2s ease both;
     }
     .hero-actions {
-      display: flex;
-      gap: 14px;
-      flex-wrap: wrap;
+      display: flex; gap: 12px; flex-wrap: wrap;
+      animation: fadeUp 0.8s 0.3s ease both;
     }
-    .hero-eeg {
-      position: absolute;
-      right: 0;
-      top: 50%;
-      transform: translateY(-50%);
-      width: 420px;
-      opacity: 0.18;
-      pointer-events: none;
+    .hero-scroll-hint {
+      position: absolute; bottom: 28px; left: 50%; transform: translateX(-50%);
+      z-index: 10; display: flex; flex-direction: column; align-items: center; gap: 6px;
+      animation: fadeIn 1.5s 1.5s ease both;
     }
-    .hero-badges {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-      margin-bottom: 20px;
+    .hero-scroll-hint span {
+      font-family: var(--mono); font-size: 9px; color: var(--dim);
+      letter-spacing: 0.2em; text-transform: uppercase;
     }
-    .badge {
-      font-family: var(--mono);
-      font-size: 10px;
-      letter-spacing: 0.08em;
-      padding: 3px 10px;
-      border-radius: 100px;
-      border: 1px solid var(--dim);
-      color: var(--muted);
+    .scroll-arrow {
+      width: 1px; height: 40px; background: linear-gradient(to bottom, var(--dim), transparent);
+      animation: scrollPulse 2s ease-in-out infinite;
     }
+    @keyframes scrollPulse { 0%,100%{opacity:0.3} 50%{opacity:0.8} }
+    @keyframes fadeUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:none} }
+    @keyframes fadeIn { from{opacity:0} to{opacity:1} }
 
-    /* ── EEG animated line ── */
-    .eeg-line {
-      stroke-dasharray: 2000;
-      stroke-dashoffset: 2000;
-      animation: eegDraw 3s ease forwards;
+    /* ══ LAYOUT ══════════════════════════════════════════════════════════ */
+    .section-wrap { padding: 100px 72px; max-width: 1100px; margin: 0 auto; }
+    .section-label {
+      font-family: var(--mono); font-size: 10px; letter-spacing: 0.2em;
+      text-transform: uppercase; color: var(--muted); margin-bottom: 10px; display: block;
     }
-    @keyframes eegDraw {
-      to { stroke-dashoffset: 0; }
+    h2 {
+      font-family: var(--mono); font-size: 30px; font-weight: 500;
+      color: var(--white); letter-spacing: 0.02em; margin-bottom: 14px;
     }
+    .section-sub {
+      color: var(--muted); font-size: 15px;
+      max-width: 580px; margin-bottom: 56px; line-height: 1.75;
+    }
+    .full-divider { height: 1px; background: rgba(255,255,255,0.05); }
 
-    /* ── METRICS GRID ── */
-    .metrics-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-      gap: 16px;
-    }
-    .metric-card {
-      background: rgba(30,35,41,0.6);
-      border: 1px solid var(--border);
-      border-radius: 20px;
-      padding: 24px;
+    /* ══ GLASS CARD — matches .bb-card in the app ═════════════════════════ */
+    .glass-card {
+      background: rgba(30,35,41,0.60);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-top: 1px solid rgba(255,255,255,0.12);
       backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-radius: 24px;
+      padding: 24px 26px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.35), 0 1px 0 rgba(255,255,255,0.04) inset;
       transition: border-color 0.25s, transform 0.25s;
     }
-    .metric-card:hover {
+    .glass-card:hover {
       border-color: rgba(255,255,255,0.16);
       transform: translateY(-2px);
     }
-    .metric-icon {
-      width: 36px;
-      height: 36px;
-      border-radius: 10px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 16px;
-      margin-bottom: 14px;
-    }
-    .metric-icon-green { background: rgba(0,204,119,0.1); }
-    .metric-icon-purple { background: rgba(160,110,220,0.1); }
-    .metric-icon-orange { background: rgba(240,140,0,0.1); }
-    .metric-icon-blue { background: rgba(80,130,220,0.1); }
-    .metric-title {
-      font-family: var(--mono);
-      font-size: 13px;
-      font-weight: 500;
-      color: var(--white);
-      margin-bottom: 6px;
-    }
-    .metric-desc {
-      font-size: 13px;
-      color: var(--muted);
-      line-height: 1.65;
-    }
-    .metric-formula {
-      font-family: var(--mono);
-      font-size: 11px;
-      color: var(--dim);
-      margin-top: 10px;
-      padding-top: 10px;
-      border-top: 1px solid rgba(255,255,255,0.05);
-    }
 
-    /* ── ARCHITECTURE ── */
-    .arch-wrap {
-      background: rgba(20,23,30,0.8);
-      border: 1px solid var(--border);
+    /* ══ WHAT IT MEASURES — vertical with photos ════════════════════════ */
+    .measures-list { display: flex; flex-direction: column; gap: 0; }
+    .measure-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 40px;
+      align-items: center;
+      padding: 56px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+    .measure-row:last-child { border-bottom: none; }
+    .measure-row.flip { direction: rtl; }
+    .measure-row.flip > * { direction: ltr; }
+    .measure-photo {
       border-radius: 20px;
-      padding: 32px 36px;
-      font-family: var(--mono);
-      font-size: 13px;
-      line-height: 2;
+      overflow: hidden;
+      aspect-ratio: 4/3;
+      background: rgba(20,23,30,0.8);
+      border: 1px solid rgba(255,255,255,0.07);
+      position: relative;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .measure-photo img {
+      width: 100%; height: 100%;
+      object-fit: cover; display: block;
+    }
+    /* Placeholder shown when no image is set */
+    .measure-photo .photo-placeholder {
+      position: absolute; inset: 0;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 10px;
+    }
+    .measure-photo .photo-placeholder .ph-icon {
+      font-size: 40px; opacity: 0.25;
+    }
+    .measure-photo .photo-placeholder .ph-label {
+      font-family: var(--mono); font-size: 10px; letter-spacing: 0.14em;
+      color: var(--dim); text-transform: uppercase;
+    }
+    /* Gradient overlay on photos */
+    .measure-photo::after {
+      content: ''; position: absolute; inset: 0;
+      background: linear-gradient(135deg,
+        rgba(10,12,18,0.2) 0%, rgba(10,12,18,0.4) 100%);
+      border-radius: 20px;
+      pointer-events: none;
+    }
+    .measure-text { display: flex; flex-direction: column; gap: 16px; }
+    .measure-num {
+      font-family: var(--mono); font-size: 11px; letter-spacing: 0.18em;
+      text-transform: uppercase;
+    }
+    .measure-num-green  { color: var(--green); }
+    .measure-num-orange { color: var(--orange); }
+    .measure-num-purple { color: var(--purple); }
+    .measure-num-blue   { color: #5B9CF6; }
+    .measure-title {
+      font-family: var(--mono); font-size: 22px; font-weight: 500;
+      color: var(--white); letter-spacing: 0.02em; line-height: 1.2;
+    }
+    .measure-body {
+      font-size: 14px; color: var(--muted); line-height: 1.8; max-width: 440px;
+    }
+    .measure-formula {
+      font-family: var(--mono); font-size: 12px; color: var(--dim);
+      background: rgba(20,23,30,0.8);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 10px; padding: 10px 14px;
+      display: inline-block;
+    }
+    .measure-chip {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 3px 12px; border-radius: 100px;
+      font-family: var(--mono); font-size: 10px;
+      letter-spacing: 0.08em; border: 1px solid;
+    }
+    .chip-green  { color: var(--green);  border-color: rgba(0,204,119,0.3);  background: rgba(0,204,119,0.06); }
+    .chip-orange { color: var(--orange); border-color: rgba(224,144,0,0.3);  background: rgba(224,144,0,0.06); }
+    .chip-purple { color: var(--purple); border-color: rgba(160,110,220,0.3); background: rgba(160,110,220,0.06); }
+    .chip-blue   { color: #5B9CF6;       border-color: rgba(91,156,246,0.3); background: rgba(91,156,246,0.06); }
+
+    /* ══ ARCHITECTURE ═════════════════════════════════════════════════════ */
+    .arch-block {
+      background: rgba(13,15,20,0.9);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 20px; padding: 32px 36px;
+      font-family: var(--mono); font-size: 13px; line-height: 2.1;
       overflow-x: auto;
     }
-    .arch-wrap pre {
-      color: #9CA3AF;
-      white-space: pre;
-    }
-    .arch-wrap .hl-green { color: var(--green); }
-    .arch-wrap .hl-purple { color: var(--purple); }
-    .arch-wrap .hl-orange { color: #E09000; }
+    .arch-block pre { color: #9CA3AF; white-space: pre; }
+    .g { color: var(--green); }
+    .p { color: var(--purple); }
+    .o { color: var(--orange); }
+    .w { color: var(--white); }
+    .d { color: var(--dim); }
+    .arch-cards { display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; margin-top: 24px; }
 
-    /* ── STEPS ── */
-    .steps {
-      display: flex;
-      flex-direction: column;
-      gap: 0;
-    }
+    /* ══ HOW IT WORKS ═════════════════════════════════════════════════════ */
+    .steps { display: flex; flex-direction: column; gap: 0; }
     .step {
-      display: flex;
-      gap: 28px;
-      padding: 28px 0;
+      display: flex; gap: 32px; padding: 32px 0;
       border-bottom: 1px solid rgba(255,255,255,0.05);
     }
     .step:last-child { border-bottom: none; }
     .step-num {
-      font-family: var(--mono);
-      font-size: 28px;
-      font-weight: 300;
-      color: var(--dim);
-      min-width: 48px;
-      line-height: 1.2;
+      font-family: var(--mono); font-size: 32px; font-weight: 300;
+      color: var(--dim); min-width: 52px; line-height: 1.15;
     }
-    .step-content h3 {
-      font-family: var(--mono);
-      font-size: 15px;
-      font-weight: 500;
-      color: var(--white);
-      margin-bottom: 6px;
+    .step h3 {
+      font-family: var(--mono); font-size: 15px; font-weight: 500;
+      color: var(--white); margin-bottom: 8px;
     }
-    .step-content p {
-      font-size: 14px;
-      color: var(--muted);
-      line-height: 1.7;
-    }
+    .step p { font-size: 14px; color: var(--muted); line-height: 1.75; }
 
-    /* ── SCREENSHOTS ── */
-    .screenshots-grid {
+    /* ══ SCREENSHOTS ══════════════════════════════════════════════════════ */
+    .shots-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      grid-template-columns: repeat(2, 1fr);
       gap: 16px;
     }
-    .screenshot-slot {
+    .shot {
+      border-radius: 16px; overflow: hidden; aspect-ratio: 16/9;
       background: rgba(20,23,30,0.7);
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      overflow: hidden;
-      aspect-ratio: 16/9;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-direction: column;
-      gap: 8px;
+      border: 1px solid rgba(255,255,255,0.07);
+      display: flex; align-items: center; justify-content: center;
+      flex-direction: column; gap: 8px; position: relative;
     }
-    .screenshot-slot img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      display: block;
+    .shot img { width:100%; height:100%; object-fit:cover; display:block; }
+    .shot .shot-label {
+      font-family: var(--mono); font-size: 10px;
+      letter-spacing: 0.14em; color: var(--dim); text-transform: uppercase;
     }
-    .screenshot-slot .placeholder-text {
-      font-family: var(--mono);
-      font-size: 11px;
-      color: var(--dim);
-      letter-spacing: 0.1em;
+    .shot .shot-hint {
+      font-family: var(--mono); font-size: 9px;
+      color: rgba(55,65,81,0.8);
     }
 
-    /* ── INSTALL BLOCK ── */
-    .install-steps {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
+    /* ══ INSTALL ══════════════════════════════════════════════════════════ */
+    .install-grid { display: flex; flex-direction: column; gap: 14px; }
+    .code-label {
+      font-family: var(--mono); font-size: 10px;
+      letter-spacing: 0.14em; text-transform: uppercase;
+      color: var(--muted); margin-bottom: 4px; display: block;
     }
     .code-block {
-      background: rgba(15,18,24,0.9);
+      background: rgba(13,15,20,0.95);
       border: 1px solid rgba(255,255,255,0.07);
-      border-radius: 12px;
-      padding: 16px 20px;
-      font-family: var(--mono);
-      font-size: 13px;
-      line-height: 1.8;
-      overflow-x: auto;
-      position: relative;
+      border-radius: 14px; padding: 18px 22px;
+      font-family: var(--mono); font-size: 13px;
+      line-height: 1.9; overflow-x: auto; position: relative;
     }
-    .code-block .comment { color: #4B5563; }
-    .code-block .cmd { color: #9CA3AF; }
-    .code-block .highlight { color: var(--green); }
-    .code-label {
-      font-family: var(--mono);
-      font-size: 10px;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      color: var(--muted);
-      margin-bottom: 6px;
-      display: block;
+    .code-block .cm { color: #4B5563; }
+    .code-block .hi { color: var(--green); }
+    .code-block .pu { color: var(--purple); }
+    .notice {
+      background: rgba(0,204,119,0.05);
+      border: 1px solid rgba(0,204,119,0.15);
+      border-radius: 14px; padding: 18px 22px;
+      font-size: 13px; color: var(--muted); line-height: 1.75;
     }
+    .notice a { color: var(--green); text-decoration: none; }
+    .notice a:hover { text-decoration: underline; }
 
-    /* ── DATASET CARD ── */
+    /* ══ DATASET ══════════════════════════════════════════════════════════ */
     .dataset-card {
-      background: rgba(20,30,25,0.7);
+      background: rgba(18,28,22,0.75);
       border: 1px solid rgba(0,204,119,0.18);
       border-left: 3px solid rgba(0,204,119,0.5);
-      border-radius: 20px;
-      padding: 32px 36px;
-      display: flex;
-      gap: 48px;
-      flex-wrap: wrap;
+      border-radius: 24px; padding: 36px 40px;
+      display: flex; gap: 0; flex-wrap: wrap; align-items: stretch;
     }
-    .dataset-stat { flex: 1; min-width: 120px; }
-    .dataset-stat .num {
-      font-family: var(--mono);
-      font-size: 32px;
-      font-weight: 400;
-      color: var(--green);
-      line-height: 1;
-      margin-bottom: 4px;
+    .ds-stat { flex: 1; min-width: 110px; padding: 0 24px; }
+    .ds-stat:first-child { padding-left: 0; }
+    .ds-stat .n {
+      font-family: var(--mono); font-size: 36px; font-weight: 300;
+      color: var(--green); line-height: 1; margin-bottom: 4px;
     }
-    .dataset-stat .label {
-      font-size: 12px;
-      color: var(--muted);
-      font-family: var(--mono);
-      letter-spacing: 0.06em;
-    }
-    .dataset-divider {
-      width: 1px;
-      background: rgba(255,255,255,0.06);
-      align-self: stretch;
-    }
+    .ds-stat .l { font-family: var(--mono); font-size: 10px; letter-spacing: 0.1em; color: var(--muted); }
+    .ds-vr { width: 1px; background: rgba(255,255,255,0.06); align-self: stretch; margin: 0 4px; }
+    .dataset-links { display: flex; gap: 12px; margin-top: 32px; flex-wrap: wrap; }
 
-    /* ── REFS ── */
-    .refs {
-      display: flex;
-      flex-direction: column;
-      gap: 0;
+    /* ══ RESEARCH / REFS ══════════════════════════════════════════════════ */
+    .study-card {
+      background: rgba(25,22,38,0.75);
+      border: 1px solid rgba(160,110,220,0.2);
+      border-left: 3px solid rgba(160,110,220,0.5);
+      border-radius: 20px; padding: 28px 32px;
+      margin-bottom: 32px;
     }
+    .study-card .journal {
+      font-family: var(--mono); font-size: 10px; letter-spacing: 0.14em;
+      text-transform: uppercase; color: var(--purple); margin-bottom: 8px; display: block;
+    }
+    .study-card h3 {
+      font-family: var(--mono); font-size: 16px; font-weight: 500;
+      color: var(--white); margin-bottom: 10px; letter-spacing: 0.02em;
+    }
+    .study-card p { font-size: 13px; color: var(--muted); line-height: 1.7; }
+    .study-card a { color: var(--purple); text-decoration: none; }
+    .study-card a:hover { text-decoration: underline; }
+    .refs { display: flex; flex-direction: column; gap: 0; }
     .ref {
-      padding: 18px 0;
-      border-bottom: 1px solid rgba(255,255,255,0.04);
-      font-size: 13px;
-      color: var(--muted);
-      line-height: 1.7;
+      padding: 16px 0; border-bottom: 1px solid rgba(255,255,255,0.04);
+      font-size: 13px; color: var(--muted); line-height: 1.7;
     }
     .ref:last-child { border-bottom: none; }
     .ref strong { color: #9CA3AF; font-weight: 400; }
 
-    /* ── FOOTER ── */
+    /* ══ FOOTER ══════════════════════════════════════════════════════════ */
     footer {
       border-top: 1px solid rgba(255,255,255,0.05);
-      padding: 40px 48px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      flex-wrap: gap;
-      max-width: 1100px;
-      margin: 0 auto;
+      padding: 44px 72px; display: flex;
+      align-items: center; justify-content: space-between;
+      flex-wrap: wrap; gap: 16px;
     }
-    .footer-brand {
-      font-family: var(--mono);
-      font-size: 13px;
-      letter-spacing: 0.1em;
-      color: var(--muted);
-    }
-    .footer-links {
-      display: flex;
-      gap: 24px;
-    }
+    .footer-brand { font-family: var(--mono); font-size: 12px; letter-spacing: 0.12em; color: var(--muted); }
+    .footer-links { display: flex; gap: 24px; }
     .footer-links a {
-      font-family: var(--mono);
-      font-size: 11px;
-      letter-spacing: 0.08em;
-      color: var(--dim);
-      text-decoration: none;
-      transition: color 0.2s;
+      font-family: var(--mono); font-size: 10px; letter-spacing: 0.1em;
+      color: var(--dim); text-decoration: none; transition: color 0.2s;
     }
     .footer-links a:hover { color: var(--muted); }
 
-    /* ── DIVIDER ── */
-    .full-divider {
-      height: 1px;
-      background: rgba(255,255,255,0.05);
-      margin: 0;
-    }
-
-    /* ── RESPONSIVE ── */
-    @media (max-width: 768px) {
+    /* ══ RESPONSIVE ════════════════════════════════════════════════════════ */
+    @media (max-width: 900px) {
       nav { padding: 0 24px; }
       .nav-links { display: none; }
-      #hero { padding: 120px 24px 80px; }
-      section { padding: 64px 24px; }
-      .hero-eeg { display: none; }
+      .hero-content { padding: 0 28px 64px; }
+      .section-wrap { padding: 72px 28px; }
+      .measure-row { grid-template-columns: 1fr; gap: 28px; }
+      .measure-row.flip { direction: ltr; }
+      .arch-cards { grid-template-columns: 1fr; }
+      .shots-grid { grid-template-columns: 1fr; }
       .dataset-card { flex-direction: column; gap: 24px; }
-      .dataset-divider { display: none; }
-      footer { padding: 32px 24px; flex-direction: column; gap: 16px; }
+      .ds-stat { padding: 0; }
+      .ds-vr { display: none; }
+      footer { padding: 32px 28px; flex-direction: column; align-items: flex-start; }
     }
   </style>
 </head>
 <body>
 
-  <!-- NAV -->
-  <nav id="nav">
-    <a class="nav-brand" href="#">BRAIN BATTERY</a>
-    <ul class="nav-links">
-      <li><a href="#measures">Metrics</a></li>
-      <li><a href="#how-it-works">How It Works</a></li>
-      <li><a href="#architecture">Model</a></li>
-      <li><a href="#screenshots">Screenshots</a></li>
-      <li><a href="#get-started">Get Started</a></li>
-    </ul>
-    <div class="nav-cta">
-      <a class="btn btn-ghost" href="https://www.kaggle.com/datasets/brandon19834/universe-merged-withzero-noasr" target="_blank">Dataset</a>
-      <a class="btn btn-green" href="https://github.com/NotAverageGitHubUser/Brain-Battery" target="_blank">GitHub</a>
-    </div>
-  </nav>
+<!-- ══ NAV ════════════════════════════════════════════════════════════════ -->
+<nav id="nav">
+  <a class="nav-brand" href="#">BRAIN BATTERY</a>
+  <ul class="nav-links">
+    <li><a href="#measures">Metrics</a></li>
+    <li><a href="#architecture">Model</a></li>
+    <li><a href="#how-it-works">How It Works</a></li>
+    <li><a href="#dataset">Dataset</a></li>
+    <li><a href="#get-started">Get Started</a></li>
+  </ul>
+  <div class="nav-cta">
+    <a class="btn btn-ghost" href="https://www.kaggle.com/datasets/brandon19834/universe-merged-withzero-noasr" target="_blank">Dataset</a>
+    <a class="btn btn-green" href="https://github.com/NotAverageGitHubUser/Brain-Battery" target="_blank">GitHub</a>
+  </div>
+</nav>
 
-  <!-- HERO -->
-  <section id="hero">
-    <!-- Animated EEG illustration -->
-    <svg class="hero-eeg" viewBox="0 0 420 280" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path class="eeg-line" d="M0 80 L40 80 L50 60 L60 100 L70 40 L80 120 L90 80 L130 80
-        L140 70 L150 90 L160 50 L170 110 L180 80 L220 80
-        L230 65 L240 95 L250 45 L260 115 L270 80 L310 80
-        L320 72 L330 88 L340 55 L350 105 L360 80 L420 80"
-        stroke="#00CC77" stroke-width="1.5" fill="none" />
-      <path class="eeg-line" style="animation-delay:0.4s"
-        d="M0 140 L40 140 L50 125 L60 155 L70 108 L80 168 L90 140 L130 140
-        L140 130 L150 150 L160 115 L170 165 L180 140 L220 140
-        L230 128 L240 152 L250 110 L260 170 L270 140 L310 140
-        L320 132 L330 148 L340 118 L350 162 L360 140 L420 140"
-        stroke="#A06EDC" stroke-width="1.5" fill="none" />
-      <path class="eeg-line" style="animation-delay:0.8s"
-        d="M0 200 L40 200 L48 188 L56 212 L68 178 L76 222 L84 200 L130 200
-        L138 192 L148 208 L158 182 L168 218 L178 200 L220 200
-        L228 190 L238 210 L248 180 L258 220 L268 200 L310 200
-        L318 193 L328 207 L338 183 L348 217 L358 200 L420 200"
-        stroke="#E09000" stroke-width="1.5" fill="none" />
+<!-- ══ HERO — full-viewport brain/BCI photo ═══════════════════════════════ -->
+<section id="hero">
+  <div class="hero-photo">
+    <!--
+      ADD YOUR HERO IMAGE:
+      1. Save a brain / BCI / EEG headset photo to  docs/assets/hero.jpg
+      2. Uncomment the line below
+    -->
+    <!-- <img src="assets/hero.jpg" alt="Brain-computer interface and EEG visualization" /> -->
+
+    <!-- CSS fallback visible until you add the photo -->
+    <div style="position:absolute;inset:0;background:
+      radial-gradient(ellipse 120% 80% at 60% 30%, rgba(160,110,220,0.15) 0%, transparent 55%),
+      radial-gradient(ellipse 80%  60% at 20% 80%, rgba(0,204,119,0.10)  0%, transparent 50%),
+      #050709;"></div>
+
+    <!-- Neural network node illustration -->
+    <svg style="position:absolute;inset:0;width:100%;height:100%;opacity:0.12" viewBox="0 0 1200 700" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+      <!-- connection lines -->
+      <line x1="300" y1="180" x2="560" y2="280" stroke="#A06EDC" stroke-width="0.8"/>
+      <line x1="300" y1="180" x2="560" y2="180" stroke="#A06EDC" stroke-width="0.8"/>
+      <line x1="300" y1="350" x2="560" y2="280" stroke="#A06EDC" stroke-width="0.8"/>
+      <line x1="300" y1="350" x2="560" y2="380" stroke="#A06EDC" stroke-width="0.8"/>
+      <line x1="300" y1="500" x2="560" y2="380" stroke="#A06EDC" stroke-width="0.8"/>
+      <line x1="300" y1="500" x2="560" y2="480" stroke="#A06EDC" stroke-width="0.8"/>
+      <line x1="560" y1="180" x2="820" y2="220" stroke="#00CC77" stroke-width="0.8"/>
+      <line x1="560" y1="280" x2="820" y2="220" stroke="#00CC77" stroke-width="0.8"/>
+      <line x1="560" y1="280" x2="820" y2="350" stroke="#00CC77" stroke-width="0.8"/>
+      <line x1="560" y1="380" x2="820" y2="350" stroke="#00CC77" stroke-width="0.8"/>
+      <line x1="560" y1="380" x2="820" y2="460" stroke="#00CC77" stroke-width="0.8"/>
+      <line x1="560" y1="480" x2="820" y2="460" stroke="#00CC77" stroke-width="0.8"/>
+      <line x1="820" y1="220" x2="1020" y2="330" stroke="#E09000" stroke-width="1.2"/>
+      <line x1="820" y1="350" x2="1020" y2="330" stroke="#E09000" stroke-width="1.2"/>
+      <line x1="820" y1="460" x2="1020" y2="330" stroke="#E09000" stroke-width="1.2"/>
+      <!-- nodes -->
+      <circle cx="300"  cy="180" r="5" fill="#A06EDC"/>
+      <circle cx="300"  cy="350" r="5" fill="#A06EDC"/>
+      <circle cx="300"  cy="500" r="5" fill="#A06EDC"/>
+      <circle cx="560"  cy="180" r="5" fill="#6B7280"/>
+      <circle cx="560"  cy="280" r="5" fill="#6B7280"/>
+      <circle cx="560"  cy="380" r="5" fill="#6B7280"/>
+      <circle cx="560"  cy="480" r="5" fill="#6B7280"/>
+      <circle cx="820"  cy="220" r="5" fill="#00CC77"/>
+      <circle cx="820"  cy="350" r="5" fill="#00CC77"/>
+      <circle cx="820"  cy="460" r="5" fill="#00CC77"/>
+      <circle cx="1020" cy="330" r="8" fill="#E09000"/>
+      <!-- labels -->
+      <text x="260" y="175"  font-family="DM Mono" font-size="10" fill="#A06EDC" opacity="0.7">EEG</text>
+      <text x="246" y="345"  font-family="DM Mono" font-size="10" fill="#A06EDC" opacity="0.7">Physio</text>
+      <text x="246" y="495"  font-family="DM Mono" font-size="10" fill="#A06EDC" opacity="0.7">Spectral</text>
+      <text x="1034" y="334" font-family="DM Mono" font-size="10" fill="#E09000" opacity="0.7">CW</text>
     </svg>
+  </div>
 
-    <div class="hero-eyebrow">Open Source · EEG · Deep Learning</div>
-    <h1>Real-time<br><span>Cognitive Load</span><br>Monitor</h1>
+  <!-- EEG traces at the bottom of the hero -->
+  <svg class="hero-eeg-svg" viewBox="0 0 1440 200" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+    <path class="eeg-path" d="M0 120 L80 120 L100 90 L120 150 L135 65 L150 175 L165 120 L280 120 L295 105 L310 135 L325 85 L340 155 L355 120 L460 120 L475 100 L490 140 L505 75 L520 165 L535 120 L640 120 L655 108 L670 132 L685 88 L700 152 L715 120 L820 120 L835 102 L850 138 L865 78 L880 162 L895 120 L1000 120 L1015 106 L1030 134 L1045 82 L1060 158 L1075 120 L1180 120 L1195 104 L1210 136 L1225 80 L1240 160 L1255 120 L1440 120"
+      stroke="#00CC77" stroke-width="1.5" fill="none"/>
+    <path class="eeg-path" style="animation-delay:0.5s" d="M0 155 L80 155 L95 140 L110 170 L125 125 L140 185 L155 155 L260 155 L275 142 L290 168 L305 128 L320 182 L335 155 L440 155 L455 138 L470 172 L485 122 L500 188 L515 155 L620 155 L635 141 L650 169 L665 126 L680 184 L695 155 L800 155 L815 139 L830 171 L845 124 L860 186 L875 155 L980 155 L995 140 L1010 170 L1025 125 L1040 185 L1055 155 L1160 155 L1175 138 L1190 172 L1205 122 L1220 188 L1235 155 L1440 155"
+      stroke="#A06EDC" stroke-width="1.5" fill="none"/>
+    <path class="eeg-path" style="animation-delay:1s" d="M0 178 L80 178 L93 166 L106 190 L118 152 L130 195 L142 178 L240 178 L253 164 L266 192 L279 150 L292 196 L305 178 L400 178 L414 163 L428 193 L442 148 L456 198 L470 178 L565 178 L579 165 L593 191 L607 151 L621 195 L635 178 L730 178 L744 162 L758 194 L772 149 L786 197 L800 178 L895 178 L909 163 L923 193 L937 150 L951 196 L965 178 L1060 178 L1074 164 L1088 192 L1102 151 L1116 195 L1130 178 L1225 178 L1239 162 L1253 194 L1267 149 L1281 197 L1295 178 L1440 178"
+      stroke="#E09000" stroke-width="1" fill="none" opacity="0.7"/>
+  </svg>
+
+  <div class="hero-content">
+    <div class="hero-eyebrow">Open Source · EEG · Deep Learning · BCI</div>
+    <h1>Real-time<br><em>Cognitive Load</em><br>Monitor</h1>
     <p class="hero-sub">
-      Measures cognitive workload, mental fatigue, and focus streaks in real time
-      using EEG signals — powered by a custom multimodal neural network trained on
-      12 subjects with Leave-One-Subject-Out validation.
+      Measures cognitive workload, mental fatigue, and focus streaks in real time using EEG signals —
+      powered by a custom multimodal neural network trained on the UNIVERSE dataset (24 subjects, LOSO).
     </p>
-    <div class="hero-badges">
-      <span class="badge">Python 3.10+</span>
-      <span class="badge">Streamlit</span>
-      <span class="badge">PyTorch</span>
-      <span class="badge">UNIVERSE Dataset</span>
-      <span class="badge">LOSO Validated</span>
-    </div>
     <div class="hero-actions">
-      <a class="btn btn-green" href="https://github.com/NotAverageGitHubUser/Brain-Battery" target="_blank">
-        View on GitHub
-      </a>
-      <a class="btn btn-purple" href="https://www.kaggle.com/datasets/brandon19834/universe-merged-withzero-noasr" target="_blank">
-        Get Dataset
-      </a>
-      <a class="btn btn-ghost" href="#get-started">
-        Get Started
-      </a>
+      <a class="btn btn-green"   href="https://github.com/NotAverageGitHubUser/Brain-Battery" target="_blank">View on GitHub</a>
+      <a class="btn btn-purple"  href="https://www.kaggle.com/datasets/brandon19834/universe-merged-withzero-noasr" target="_blank">Get Dataset</a>
+      <a class="btn btn-outline" href="#get-started">Get Started ↓</a>
     </div>
-  </section>
+  </div>
 
-  <div class="full-divider"></div>
+  <div class="hero-scroll-hint">
+    <div class="scroll-arrow"></div>
+    <span>Scroll</span>
+  </div>
+</section>
 
-  <!-- WHAT IT MEASURES -->
-  <section id="measures">
+<div class="full-divider"></div>
+
+<!-- ══ WHAT IT MEASURES — vertical with photos ════════════════════════════ -->
+<section id="measures">
+  <div class="section-wrap">
     <span class="section-label">Metrics</span>
     <h2>What Brain Battery Measures</h2>
     <p class="section-sub">
-      Four distinct signals, each grounded in published neuroscience research.
-      Not emotional stress — cognitive workload is a different construct entirely.
+      Four distinct signals grounded in published neuroscience research.
+      Cognitive workload is not emotional stress — different construct, different labels, different biomarkers.
     </p>
-    <div class="metrics-grid">
-      <div class="metric-card">
-        <div class="metric-icon metric-icon-green">⚡</div>
-        <div class="metric-title">Cognitive Workload</div>
-        <div class="metric-desc">
-          Probability of high mental demand, estimated by a three-tower multimodal neural network
-          fusing EEG, physiological, and spectral features.
+
+    <div class="measures-list">
+
+      <!-- 01 — Cognitive Workload -->
+      <div class="measure-row">
+        <div class="measure-photo">
+          <!--
+            ADD PHOTO: docs/assets/measure-workload.jpg
+            Suggested: brain scan, fMRI, or person doing cognitive task
+            Uncomment: <img src="assets/measure-workload.jpg" alt="Cognitive workload" />
+          -->
+          <svg style="position:absolute;inset:0;width:100%;height:100%;opacity:0.15" viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="200" cy="150" r="90" fill="none" stroke="#00CC77" stroke-width="1"/>
+            <circle cx="200" cy="150" r="60" fill="none" stroke="#00CC77" stroke-width="0.8" opacity="0.6"/>
+            <circle cx="200" cy="150" r="30" fill="rgba(0,204,119,0.08)" stroke="#00CC77" stroke-width="1.5"/>
+            <line x1="110" y1="150" x2="290" y2="150" stroke="#00CC77" stroke-width="0.5" opacity="0.4"/>
+            <line x1="200" y1="60"  x2="200" y2="240" stroke="#00CC77" stroke-width="0.5" opacity="0.4"/>
+          </svg>
+          <div class="photo-placeholder">
+            <div class="ph-icon">🧠</div>
+            <div class="ph-label">Add brain scan photo</div>
+          </div>
+          <div style="position:absolute;bottom:16px;left:16px;z-index:5">
+            <span class="measure-chip chip-green">Neural Network</span>
+          </div>
         </div>
-        <div class="metric-formula">P(high CW) = softmax(workload_head(EEG ⊕ Physio ⊕ Freq))₁</div>
+        <div class="measure-text">
+          <div class="measure-num measure-num-green">01 — Primary Metric</div>
+          <div class="measure-title">Cognitive<br>Workload</div>
+          <div class="measure-body">
+            Probability of high mental demand, estimated by a three-tower multimodal neural network
+            fusing EEG, physiological signals, and spectral features. Binary classification trained
+            on NASA Task Load Index labels using Leave-One-Subject-Out cross-validation across 24 subjects.
+          </div>
+          <div class="measure-formula">P(high CW) = softmax(workload_head(EEG ⊕ Physio ⊕ Freq))₁</div>
+        </div>
       </div>
-      <div class="metric-card">
-        <div class="metric-icon metric-icon-orange">〜</div>
-        <div class="metric-title">Mental Fatigue</div>
-        <div class="metric-desc">
-          EEG spectral ratio between theta and alpha bands. Rising theta relative to alpha
-          indicates cognitive fatigue — no model involved, pure signal processing.
+
+      <!-- 02 — Mental Fatigue -->
+      <div class="measure-row flip">
+        <div class="measure-photo">
+          <!--
+            ADD PHOTO: docs/assets/measure-fatigue.jpg
+            Suggested: EEG waveform visualization, spectral plot, or tired researcher
+            Uncomment: <img src="assets/measure-fatigue.jpg" alt="Mental fatigue EEG" />
+          -->
+          <svg style="position:absolute;inset:0;width:100%;height:100%;opacity:0.15" viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg">
+            <path d="M20 150 L60 150 L75 100 L90 200 L100 80 L115 220 L130 150 L180 150 L195 120 L210 180 L225 95 L240 205 L255 150 L300 150 L315 115 L330 185 L345 92 L360 208 L375 150 L400 150" stroke="#E09000" stroke-width="2" fill="none"/>
+            <path d="M20 200 L60 200 L72 178 L84 222 L93 162 L102 238 L111 200 L155 200 L167 184 L179 216 L188 168 L197 232 L206 200 L250 200" stroke="#E09000" stroke-width="1.5" fill="none" opacity="0.5"/>
+          </svg>
+          <div class="photo-placeholder">
+            <div class="ph-icon">〜</div>
+            <div class="ph-label">Add EEG waveform photo</div>
+          </div>
+          <div style="position:absolute;bottom:16px;left:16px;z-index:5">
+            <span class="measure-chip chip-orange">EEG Spectral</span>
+          </div>
         </div>
-        <div class="metric-formula">log θ_power − log α_power &nbsp; (Klimesch, 1999)</div>
+        <div class="measure-text">
+          <div class="measure-num measure-num-orange">02 — Spectral Ratio</div>
+          <div class="measure-title">Mental<br>Fatigue</div>
+          <div class="measure-body">
+            EEG theta-to-alpha power ratio. Rising theta (4–8 Hz) relative to alpha (8–13 Hz)
+            indicates cognitive fatigue building up over time. Pure signal processing —
+            no model involved. Validated across decades of neuroscience literature.
+          </div>
+          <div class="measure-formula">log θ_power − log α_power &nbsp;(Klimesch, 1999)</div>
+        </div>
       </div>
-      <div class="metric-card">
-        <div class="metric-icon metric-icon-purple">◈</div>
-        <div class="metric-title">Focus Streak</div>
-        <div class="metric-desc">
-          Timer counting continuous low-workload windows. A grace period of three consecutive
-          high-load windows is required before the streak resets — resists momentary spikes.
+
+      <!-- 03 — Focus Streak -->
+      <div class="measure-row">
+        <div class="measure-photo">
+          <!--
+            ADD PHOTO: docs/assets/measure-focus.jpg
+            Suggested: person in deep focus, flow state, or timer visualization
+            Uncomment: <img src="assets/measure-focus.jpg" alt="Focus streak timer" />
+          -->
+          <svg style="position:absolute;inset:0;width:100%;height:100%;opacity:0.15" viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg">
+            <rect x="60"  y="200" width="30" height="60"  fill="#A06EDC" rx="4"/>
+            <rect x="110" y="165" width="30" height="95"  fill="#A06EDC" rx="4"/>
+            <rect x="160" y="140" width="30" height="120" fill="#A06EDC" rx="4"/>
+            <rect x="210" y="110" width="30" height="150" fill="#A06EDC" rx="4"/>
+            <rect x="260" y="80"  width="30" height="180" fill="#A06EDC" rx="4"/>
+            <rect x="310" y="55"  width="30" height="205" fill="#A06EDC" rx="4"/>
+          </svg>
+          <div class="photo-placeholder">
+            <div class="ph-icon">◈</div>
+            <div class="ph-label">Add focus / flow photo</div>
+          </div>
+          <div style="position:absolute;bottom:16px;left:16px;z-index:5">
+            <span class="measure-chip chip-purple">3-Window Grace</span>
+          </div>
         </div>
-        <div class="metric-formula">3-window grace period before reset</div>
+        <div class="measure-text">
+          <div class="measure-num measure-num-purple">03 — Sustained Attention</div>
+          <div class="measure-title">Focus<br>Streak</div>
+          <div class="measure-body">
+            Timer tracking continuous low-workload windows. Resistant to momentary spikes — the
+            streak only resets after three consecutive high-load windows, preventing false
+            interruptions from brief task transitions.
+          </div>
+          <div class="measure-formula">Reset threshold: 3 consecutive high-CW windows</div>
+        </div>
       </div>
-      <div class="metric-card">
-        <div class="metric-icon metric-icon-blue">◎</div>
-        <div class="metric-title">Signal Quality</div>
-        <div class="metric-desc">
-          Per-channel variance heuristic in live mode; spectral attention weight proxy in demo mode.
-          Used to weight modality contributions inside the fusion layer.
+
+      <!-- 04 — Signal Quality -->
+      <div class="measure-row flip">
+        <div class="measure-photo">
+          <!--
+            ADD PHOTO: docs/assets/measure-signal.jpg
+            Suggested: EEG headset being worn, electrode placement, or signal visualization
+            Uncomment: <img src="assets/measure-signal.jpg" alt="EEG signal quality" />
+          -->
+          <svg style="position:absolute;inset:0;width:100%;height:100%;opacity:0.15" viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="200" cy="150" r="8" fill="#5B9CF6"/>
+            <circle cx="80"  cy="150" r="8" fill="#5B9CF6"/>
+            <circle cx="320" cy="150" r="8" fill="#5B9CF6"/>
+            <circle cx="200" cy="70"  r="8" fill="#5B9CF6"/>
+            <circle cx="200" cy="230" r="8" fill="#5B9CF6"/>
+            <line x1="80"  y1="150" x2="200" y2="150" stroke="#5B9CF6" stroke-width="1.5" stroke-dasharray="4 4"/>
+            <line x1="200" y1="150" x2="320" y2="150" stroke="#5B9CF6" stroke-width="1.5" stroke-dasharray="4 4"/>
+            <line x1="200" y1="70"  x2="200" y2="230" stroke="#5B9CF6" stroke-width="1.5" stroke-dasharray="4 4"/>
+          </svg>
+          <div class="photo-placeholder">
+            <div class="ph-icon">◎</div>
+            <div class="ph-label">Add EEG headset photo</div>
+          </div>
+          <div style="position:absolute;bottom:16px;left:16px;z-index:5">
+            <span class="measure-chip chip-blue">Per-Channel</span>
+          </div>
         </div>
-        <div class="metric-formula">σ heuristic · Viola et al. (2009)</div>
+        <div class="measure-text">
+          <div class="measure-num measure-num-blue">04 — Confidence Weighting</div>
+          <div class="measure-title">Signal<br>Quality</div>
+          <div class="measure-body">
+            Per-channel standard deviation heuristic in live mode; spectral attention weight proxy
+            in demo mode. The signal quality index (SQI) is passed into the fusion layer so noisy
+            or poorly-connected channels are down-weighted automatically.
+          </div>
+          <div class="measure-formula">σ heuristic per channel &nbsp;(Viola et al., 2009)</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<div class="full-divider"></div>
+
+<!-- ══ ARCHITECTURE ════════════════════════════════════════════════════════ -->
+<section id="architecture">
+  <div class="section-wrap">
+    <span class="section-label">Model</span>
+    <h2>Architecture</h2>
+    <p class="section-sub">
+      Three-tower multimodal network with learned attention fusion, trained with
+      Leave-One-Subject-Out cross-validation across 24 subjects.
+    </p>
+    <div class="arch-block">
+<pre>
+  <span class="g">EEG</span>      (4 ch × 256 samples)   →   <span class="g">EEGNet</span>  (depthwise/separable CNN)     ─┐
+  <span class="o">Physio</span>   (BVP + HR + EDA)        →   <span class="o">1D-CNN</span>  (3-layer conv)                ├→  <span class="w">Attention Fusion</span>  →  <span class="w">Workload Head</span>  →  P(high CW)
+  <span class="p">Spectral</span>  (36 features)           →   <span class="p">MLP</span>     (BatchNorm + Dropout)         ─┘
+
+  <span class="d">Fusion:</span>   learned per-modality weights conditioned on signal quality index (SQI)
+  <span class="d">Head:</span>     Linear → BN → ReLU → Dropout → Linear → Softmax(2)
+  <span class="d">Labels:</span>   NASA-TLX binary  (high / low workload)
+  <span class="d">Val:</span>      LOSO  ·  24 subjects  ·  zero data leakage across folds
+</pre>
+    </div>
+    <div class="arch-cards">
+      <div class="glass-card">
+        <div style="font-family:var(--mono);font-size:12px;color:var(--green);margin-bottom:8px">EEGNet</div>
+        <div style="font-size:13px;color:var(--muted);line-height:1.7">Compact depthwise-separable CNN purpose-built for EEG. Captures temporal and spatial features with far fewer parameters than generic CNNs.</div>
+        <div style="font-family:var(--mono);font-size:10px;color:var(--dim);margin-top:10px">Lawhern et al. (2018)</div>
+      </div>
+      <div class="glass-card">
+        <div style="font-family:var(--mono);font-size:12px;color:var(--white);margin-bottom:8px">Attention Fusion</div>
+        <div style="font-size:13px;color:var(--muted);line-height:1.7">SQI vector conditions the fusion layer to down-weight noisy or absent modalities. Enables robust inference when physio signals are unavailable (live mode).</div>
+        <div style="font-family:var(--mono);font-size:10px;color:var(--dim);margin-top:10px">SQI-conditioned weighting</div>
+      </div>
+      <div class="glass-card">
+        <div style="font-family:var(--mono);font-size:12px;color:var(--orange);margin-bottom:8px">LOSO Validation</div>
+        <div style="font-size:13px;color:var(--muted);line-height:1.7">Each fold holds out one subject entirely — the hardest generalization test. Measures whether spectral features transfer to people the model has never seen.</div>
+        <div style="font-family:var(--mono);font-size:10px;color:var(--dim);margin-top:10px">24 subjects · zero leakage</div>
       </div>
     </div>
-  </section>
+  </div>
+</section>
 
-  <div class="full-divider"></div>
+<div class="full-divider"></div>
 
-  <!-- HOW IT WORKS -->
-  <section id="how-it-works">
+<!-- ══ HOW IT WORKS ═══════════════════════════════════════════════════════ -->
+<section id="how-it-works">
+  <div class="section-wrap">
     <span class="section-label">Workflow</span>
     <h2>How It Works</h2>
-    <p class="section-sub">Two modes: replay pre-recorded subjects, or stream live from a Muse headband.</p>
+    <p class="section-sub">Two modes: replay pre-recorded subjects from the UNIVERSE dataset, or stream live from a Muse headband.</p>
     <div class="steps">
       <div class="step">
         <div class="step-num">01</div>
-        <div class="step-content">
+        <div>
           <h3>Choose a mode</h3>
           <p>
-            <strong style="color:#A06EDC">Demo mode</strong> replays 12 pre-recorded subjects
-            from the UNIVERSE dataset with adjustable playback speed, subject selector, and full
-            physio + EEG waveforms.<br><br>
-            <strong style="color:#00CC77">Live mode</strong> connects to a Muse headband via
-            BlueMuse (Windows LSL bridge) for real-time inference. Live mode uses EEG only —
-            Muse does not capture physiological signals.
+            <strong style="color:var(--purple)">Demo mode</strong> replays 12 pre-recorded subjects from the UNIVERSE dataset with adjustable playback speed, subject selector, and synchronized EEG + physio waveforms.<br><br>
+            <strong style="color:var(--green)">Live mode</strong> connects to a Muse S or Muse 2 headband via BlueMuse (Windows LSL bridge) for real-time EEG inference. Live mode uses EEG only — Muse does not record physiological signals.
           </p>
         </div>
       </div>
       <div class="step">
         <div class="step-num">02</div>
-        <div class="step-content">
+        <div>
           <h3>Run a session</h3>
-          <p>
-            The model processes 1-second EEG windows in real time, updating the workload gauge,
-            fatigue index, and focus streak with each frame. Session data is logged automatically.
-          </p>
+          <p>The model processes 1-second EEG windows continuously, updating the cognitive workload gauge, fatigue index, and focus streak timer on each frame. Session data is appended to a local log file automatically.</p>
         </div>
       </div>
       <div class="step">
         <div class="step-num">03</div>
-        <div class="step-content">
+        <div>
           <h3>Review your history</h3>
-          <p>
-            The History tab shows all past sessions as a bar chart with per-session averages for
-            workload, fatigue, and focus time. Each session is stored locally in
-            <code style="font-family:var(--mono);font-size:12px;color:#9CA3AF">history.jsonl</code>.
-          </p>
+          <p>The History tab shows all past sessions as a bar chart with per-session averages for workload, fatigue, and focus time. Each session is stored in <code style="font-family:var(--mono);font-size:12px;color:#9CA3AF">history.jsonl</code> and persists across restarts.</p>
         </div>
       </div>
       <div class="step">
         <div class="step-num">04</div>
-        <div class="step-content">
+        <div>
           <h3>Personalization (Live mode)</h3>
-          <p>
-            An online Bayesian calibration layer adapts the workload threshold to your individual
-            cognitive baseline across sessions. Zero-calibration (population prior) → calibrating
-            → personalized — the model gets better as it learns you.
-          </p>
+          <p>An online Bayesian calibration layer adapts the workload threshold to your individual cognitive baseline across sessions. Three stages: zero-calibration (population prior) → calibrating → personalized. The model improves as it accumulates data from you.</p>
         </div>
       </div>
     </div>
-  </section>
+  </div>
+</section>
 
-  <div class="full-divider"></div>
+<div class="full-divider"></div>
 
-  <!-- ARCHITECTURE -->
-  <section id="architecture">
-    <span class="section-label">Model</span>
-    <h2>Architecture</h2>
-    <p class="section-sub">
-      A three-tower multimodal network with learned attention fusion, trained with
-      Leave-One-Subject-Out cross-validation on 12 subjects.
-    </p>
-    <div class="arch-wrap">
-<pre>
-  <span class="hl-green">EEG</span>     (4 ch × 256 samples)   →   <span class="hl-green">EEGNet</span>  (depthwise/separable CNN)   ─┐
-  <span class="hl-orange">Physio</span>  (BVP + HR + EDA)        →   <span class="hl-orange">1D-CNN</span>  (3-layer)                   ├→  Attention Fusion  →  Workload Head  →  P(high CW)
-  <span class="hl-purple">Spectral</span> (36 features)           →   <span class="hl-purple">MLP</span>     (with BatchNorm + Dropout)  ─┘
-
-  Attention Fusion:  learned per-modality weights conditioned on signal quality index
-  Workload Head:     Linear(FUSION_DIM, 128) → BN → ReLU → Dropout → Linear → Softmax
-  Labels:            NASA-TLX binary (high / low workload)
-  Validation:        LOSO  (12 folds, one subject held out per fold)
-</pre>
-    </div>
-    <div style="margin-top:24px;display:flex;gap:16px;flex-wrap:wrap">
-      <div class="metric-card" style="flex:1;min-width:200px">
-        <div class="metric-title" style="margin-bottom:8px">EEGNet</div>
-        <div class="metric-desc">Compact depthwise-separable CNN purpose-built for EEG. Fewer parameters than generic CNNs while capturing temporal and spatial features across channels.</div>
-        <div class="metric-formula">Lawhern et al. (2018)</div>
-      </div>
-      <div class="metric-card" style="flex:1;min-width:200px">
-        <div class="metric-title" style="margin-bottom:8px">Attention Fusion</div>
-        <div class="metric-desc">Signal quality index (SQI) for each modality is passed alongside tower embeddings. The fusion layer learns to down-weight noisy or missing modalities.</div>
-        <div class="metric-formula">Conditioned on SQI vector</div>
-      </div>
-      <div class="metric-card" style="flex:1;min-width:200px">
-        <div class="metric-title" style="margin-bottom:8px">LOSO Validation</div>
-        <div class="metric-desc">Each of the 12 folds holds out one subject completely. This measures how well spectral features generalize to unseen individuals — the hardest generalization test.</div>
-        <div class="metric-formula">n=12 subjects · zero data leakage</div>
-      </div>
-    </div>
-  </section>
-
-  <div class="full-divider"></div>
-
-  <!-- SCREENSHOTS -->
-  <section id="screenshots">
+<!-- ══ SCREENSHOTS ════════════════════════════════════════════════════════ -->
+<section id="screenshots">
+  <div class="section-wrap">
     <span class="section-label">Screenshots</span>
     <h2>Screenshots</h2>
-    <p class="section-sub">Demo mode, live mode, history view, and the first-run setup screen.</p>
-    <div class="screenshots-grid">
-      <div class="screenshot-slot">
-        <!-- Replace with: <img src="assets/screenshot-home.png" alt="Home page" /> -->
-        <span class="placeholder-text">HOME PAGE</span>
-        <span style="font-size:11px;color:#374151;font-family:var(--mono)">replace with screenshot</span>
+    <p class="section-sub">Home page, Demo mode dashboard, History view, and the first-run setup screen.</p>
+    <div class="shots-grid">
+      <div class="shot">
+        <!-- <img src="assets/screenshot-home.png" alt="Home page" /> -->
+        <span class="shot-label">Home Page</span>
+        <span class="shot-hint">docs/assets/screenshot-home.png</span>
       </div>
-      <div class="screenshot-slot">
-        <!-- Replace with: <img src="assets/screenshot-demo.png" alt="Demo mode dashboard" /> -->
-        <span class="placeholder-text">DEMO MODE</span>
-        <span style="font-size:11px;color:#374151;font-family:var(--mono)">replace with screenshot</span>
+      <div class="shot">
+        <!-- <img src="assets/screenshot-demo.png" alt="Demo mode" /> -->
+        <span class="shot-label">Demo Mode</span>
+        <span class="shot-hint">docs/assets/screenshot-demo.png</span>
       </div>
-      <div class="screenshot-slot">
-        <!-- Replace with: <img src="assets/screenshot-live.png" alt="Live mode dashboard" /> -->
-        <span class="placeholder-text">LIVE MODE</span>
-        <span style="font-size:11px;color:#374151;font-family:var(--mono)">replace with screenshot</span>
+      <div class="shot">
+        <!-- <img src="assets/screenshot-live.png" alt="Live mode" /> -->
+        <span class="shot-label">Live Mode</span>
+        <span class="shot-hint">docs/assets/screenshot-live.png</span>
       </div>
-      <div class="screenshot-slot">
-        <!-- Replace with: <img src="assets/screenshot-history.png" alt="History tab" /> -->
-        <span class="placeholder-text">HISTORY</span>
-        <span style="font-size:11px;color:#374151;font-family:var(--mono)">replace with screenshot</span>
+      <div class="shot">
+        <!-- <img src="assets/screenshot-history.png" alt="History tab" /> -->
+        <span class="shot-label">History</span>
+        <span class="shot-hint">docs/assets/screenshot-history.png</span>
       </div>
     </div>
-  </section>
+  </div>
+</section>
 
-  <div class="full-divider"></div>
+<div class="full-divider"></div>
 
-  <!-- GET STARTED -->
-  <section id="get-started">
+<!-- ══ GET STARTED ════════════════════════════════════════════════════════ -->
+<section id="get-started">
+  <div class="section-wrap">
     <span class="section-label">Installation</span>
     <h2>Get Started</h2>
-    <p class="section-sub">Runs locally. No cloud account needed for Demo mode — just Python and the dataset.</p>
-    <div class="install-steps">
+    <p class="section-sub">Runs locally. No cloud setup needed for Demo mode — just Python and the dataset.</p>
+    <div class="install-grid">
       <span class="code-label">1 — Clone and install</span>
       <div class="code-block">
-        <span class="comment"># clone the repo</span><br>
-        <span class="cmd">git clone https://github.com/NotAverageGitHubUser/Brain-Battery.git</span><br>
-        <span class="cmd">cd Brain-Battery</span><br><br>
-        <span class="comment"># install dependencies</span><br>
-        <span class="cmd">pip install streamlit torch numpy scipy plotly kaggle</span>
+        <span class="cm"># clone the repo</span><br>
+        git clone https://github.com/NotAverageGitHubUser/Brain-Battery.git<br>
+        cd Brain-Battery<br><br>
+        <span class="cm"># install dependencies</span><br>
+        pip install streamlit torch numpy scipy plotly kaggle
       </div>
-      <span class="code-label">2 — Launch (dataset downloads automatically on first run)</span>
+      <span class="code-label">2 — Run (dataset setup is automatic on first launch)</span>
       <div class="code-block">
-        <span class="highlight">python -m streamlit run dashboard.py</span>
+        <span class="hi">python -m streamlit run dashboard.py</span>
       </div>
-      <div style="background:rgba(0,204,119,0.05);border:1px solid rgba(0,204,119,0.15);border-radius:12px;padding:16px 20px;font-size:13px;color:var(--muted)">
-        On first launch, Brain Battery will show a setup screen. Enter your
-        <a href="https://www.kaggle.com/settings/account" target="_blank"
-           style="color:var(--green);text-decoration:none">Kaggle API credentials</a>
-        and click <strong style="color:#D1D5DB">Download Dataset</strong> — the
-        ~300 MB dataset downloads and unzips automatically.
+      <div class="notice">
+        On first launch, Brain Battery shows a setup screen. Enter your
+        <a href="https://www.kaggle.com/settings/account" target="_blank">Kaggle API credentials</a>
+        and click <strong>Download Dataset</strong> — the ~300 MB dataset downloads and unzips automatically.
+        No manual file management needed.
       </div>
-      <span class="code-label">3 — Live mode (optional — Muse headband required)</span>
+      <span class="code-label">3 — Live mode (optional — Muse headband + BlueMuse required)</span>
       <div class="code-block">
-        <span class="comment"># install BlueMuse (Windows), start LSL stream, then connect in the app</span><br>
-        <span class="cmd">https://github.com/kowalej/BlueMuse</span>
+        <span class="cm"># Windows: install BlueMuse, start the LSL stream, then connect inside the app</span><br>
+        <span class="pu">https://github.com/kowalej/BlueMuse</span>
       </div>
     </div>
-  </section>
+  </div>
+</section>
 
-  <div class="full-divider"></div>
+<div class="full-divider"></div>
 
-  <!-- DATASET -->
-  <section id="dataset">
+<!-- ══ DATASET ════════════════════════════════════════════════════════════ -->
+<section id="dataset">
+  <div class="section-wrap">
     <span class="section-label">Dataset</span>
     <h2>UNIVERSE Dataset</h2>
     <p class="section-sub">
-      EEG and physiological recordings from subjects performing tasks at varying mental demand levels,
-      labeled with NASA Task Load Index scores.
+      EEG and physiological recordings from 24 subjects performing tasks at varying mental demand levels,
+      labeled with NASA Task Load Index (NASA-TLX) scores. Originally published in <em>Scientific Data</em> (Nature, 2024).
     </p>
     <div class="dataset-card">
-      <div class="dataset-stat">
-        <div class="num">12</div>
-        <div class="label">Subjects</div>
-      </div>
-      <div class="dataset-divider"></div>
-      <div class="dataset-stat">
-        <div class="num">4</div>
-        <div class="label">EEG Channels</div>
-      </div>
-      <div class="dataset-divider"></div>
-      <div class="dataset-stat">
-        <div class="num">3</div>
-        <div class="label">Physio Signals</div>
-      </div>
-      <div class="dataset-divider"></div>
-      <div class="dataset-stat">
-        <div class="num">~300</div>
-        <div class="label">MB Total</div>
-      </div>
-      <div class="dataset-divider"></div>
-      <div class="dataset-stat">
-        <div class="num">LOSO</div>
-        <div class="label">Validation</div>
-      </div>
+      <div class="ds-stat"><div class="n">24</div><div class="l">Subjects</div></div>
+      <div class="ds-vr"></div>
+      <div class="ds-stat"><div class="n">4</div><div class="l">EEG Channels</div></div>
+      <div class="ds-vr"></div>
+      <div class="ds-stat"><div class="n">3</div><div class="l">Physio Signals</div></div>
+      <div class="ds-vr"></div>
+      <div class="ds-stat"><div class="n">~300</div><div class="l">MB Total</div></div>
+      <div class="ds-vr"></div>
+      <div class="ds-stat"><div class="n">LOSO</div><div class="l">Validation</div></div>
     </div>
-    <div style="margin-top:20px">
-      <a class="btn btn-green" href="https://www.kaggle.com/datasets/brandon19834/universe-merged-withzero-noasr" target="_blank">
-        Download on Kaggle →
-      </a>
+    <div class="dataset-links">
+      <a class="btn btn-green"  href="https://www.kaggle.com/datasets/brandon19834/universe-merged-withzero-noasr" target="_blank">Download on Kaggle</a>
+      <a class="btn btn-ghost"  href="https://github.com/HPI-CH/UNIVERSE" target="_blank">Original GitHub →</a>
+      <a class="btn btn-ghost"  href="https://www.nature.com/articles/s41597-024-03738-7" target="_blank">Nature Paper →</a>
     </div>
-  </section>
+  </div>
+</section>
 
-  <div class="full-divider"></div>
+<div class="full-divider"></div>
 
-  <!-- REFERENCES -->
-  <section id="references">
+<!-- ══ RESEARCH ═══════════════════════════════════════════════════════════ -->
+<section id="references">
+  <div class="section-wrap">
     <span class="section-label">Research</span>
-    <h2>References</h2>
+    <h2>Research Background</h2>
+    <p class="section-sub">The dataset and model are grounded in peer-reviewed neuroscience and BCI research.</p>
+
+    <!-- Featured study -->
+    <div class="study-card">
+      <span class="journal">Scientific Data · Nature · 2024</span>
+      <h3>UNIVERSE: A Multimodal Dataset for Cognitive Workload Estimation</h3>
+      <p>
+        The original UNIVERSE dataset paper describing the 24-subject study, recording protocol,
+        EEG + physiological signal collection, and NASA-TLX labeling methodology.
+        This is the primary data source for Brain Battery's Demo mode.<br><br>
+        <a href="https://www.nature.com/articles/s41597-024-03738-7" target="_blank">Read the paper → nature.com/articles/s41597-024-03738-7</a>
+        &nbsp;·&nbsp;
+        <a href="https://github.com/HPI-CH/UNIVERSE" target="_blank">Dataset repository → github.com/HPI-CH/UNIVERSE</a>
+      </p>
+    </div>
+
     <div class="refs">
       <div class="ref"><strong>Klimesch (1999)</strong> EEG alpha and theta oscillations reflect cognitive and memory performance. <em>Brain Research Reviews</em>, 29, 169–195.</div>
       <div class="ref"><strong>Lawhern et al. (2018)</strong> EEGNet: A compact convolutional neural network for EEG-based brain-computer interfaces. <em>J. Neural Engineering</em>, 15(5).</div>
@@ -828,24 +927,26 @@
       <div class="ref"><strong>Viola et al. (2009)</strong> Semi-automatic identification of independent components representing EEG artifact. <em>J. Neuroscience Methods</em>, 182(1), 15–26.</div>
       <div class="ref"><strong>Welford (1962)</strong> On changes of performance with age. <em>Technometrics</em>, 4(3), 419–420.</div>
     </div>
-  </section>
+  </div>
+</section>
 
-  <!-- FOOTER -->
-  <footer>
-    <span class="footer-brand">BRAIN BATTERY — Brandon Dong</span>
-    <div class="footer-links">
-      <a href="https://github.com/NotAverageGitHubUser/Brain-Battery" target="_blank">GitHub</a>
-      <a href="https://www.kaggle.com/datasets/brandon19834/universe-merged-withzero-noasr" target="_blank">Dataset</a>
-      <a href="mailto:brandondong999@gmail.com">Contact</a>
-    </div>
-  </footer>
+<!-- ══ FOOTER ══════════════════════════════════════════════════════════════ -->
+<footer>
+  <span class="footer-brand">BRAIN BATTERY — Brandon Dong</span>
+  <div class="footer-links">
+    <a href="https://github.com/NotAverageGitHubUser/Brain-Battery" target="_blank">GitHub</a>
+    <a href="https://www.kaggle.com/datasets/brandon19834/universe-merged-withzero-noasr" target="_blank">Dataset</a>
+    <a href="https://www.nature.com/articles/s41597-024-03738-7" target="_blank">Paper</a>
+    <a href="mailto:brandondong999@gmail.com">Contact</a>
+  </div>
+</footer>
 
-  <script>
-    // Navbar scroll effect
-    const nav = document.getElementById('nav');
-    window.addEventListener('scroll', () => {
-      nav.classList.toggle('scrolled', window.scrollY > 40);
-    });
-  </script>
+<script>
+  // Navbar scroll glass effect
+  const nav = document.getElementById('nav');
+  window.addEventListener('scroll', () => {
+    nav.classList.toggle('scrolled', window.scrollY > 60);
+  }, { passive: true });
+</script>
 </body>
 </html>

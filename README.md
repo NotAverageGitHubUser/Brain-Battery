@@ -110,14 +110,15 @@ The UNIVERSE dataset contains EEG and physiological recordings from 12 subjects 
 
 | Property | Value |
 |----------|-------|
-| Subjects | 12 |
+| Subjects | 24 |
 | EEG channels | 4 (TP9, AF7, AF8, TP10) |
 | Physio signals | BVP, HR, EDA |
 | Labels | Binary workload (NASA-TLX) |
 | Epoch length | 256 samples |
 | Validation | Leave-One-Subject-Out (LOSO) |
+| Published | *Scientific Data* (Nature, 2024) |
 
-[**Download on Kaggle →**](https://www.kaggle.com/datasets/brandon19834/universe-merged-withzero-noasr)
+[**Download on Kaggle →**](https://www.kaggle.com/datasets/brandon19834/universe-merged-withzero-noasr) &nbsp;·&nbsp; [**Original dataset repo →**](https://github.com/HPI-CH/UNIVERSE) &nbsp;·&nbsp; [**Nature paper →**](https://www.nature.com/articles/s41597-024-03738-7)
 
 ---
 
