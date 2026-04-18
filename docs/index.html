@@ -1,0 +1,851 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Brain Battery — Cognitive Workload Monitor</title>
+  <meta name="description" content="Real-time cognitive workload monitor using EEG signals and a custom multimodal deep learning model. Demo and live Muse headband modes." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:       #0A0C10;
+      --bg2:      #0D0F14;
+      --green:    #00CC77;
+      --purple:   #A06EDC;
+      --white:    #FFFFFF;
+      --text:     #E5E7EB;
+      --muted:    #6B7280;
+      --dim:      #374151;
+      --border:   rgba(255,255,255,0.08);
+      --mono:     'DM Mono', monospace;
+      --sans:     'DM Sans', sans-serif;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--sans);
+      line-height: 1.6;
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 48px;
+      height: 60px;
+      background: rgba(10,12,18,0);
+      border-bottom: 1px solid rgba(255,255,255,0);
+      transition: background 0.3s, border-color 0.3s;
+    }
+    nav.scrolled {
+      background: rgba(10,12,18,0.88);
+      border-bottom-color: rgba(255,255,255,0.07);
+      backdrop-filter: blur(20px);
+    }
+    .nav-brand {
+      font-family: var(--mono);
+      font-size: 14px;
+      font-weight: 500;
+      letter-spacing: 0.12em;
+      color: var(--white);
+      text-decoration: none;
+    }
+    .nav-links {
+      display: flex;
+      gap: 32px;
+      list-style: none;
+    }
+    .nav-links a {
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+    .nav-links a:hover { color: var(--white); }
+    .nav-cta {
+      display: flex;
+      gap: 12px;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 8px 18px;
+      border-radius: 100px;
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      font-weight: 500;
+      text-decoration: none;
+      border: none;
+      cursor: pointer;
+      transition: opacity 0.2s, transform 0.2s;
+    }
+    .btn:hover { opacity: 0.85; transform: translateY(-1px); }
+    .btn-ghost {
+      background: rgba(255,255,255,0.06);
+      color: var(--text);
+      border: 1px solid rgba(255,255,255,0.12);
+    }
+    .btn-green {
+      background: var(--green);
+      color: #000;
+    }
+    .btn-purple {
+      background: var(--purple);
+      color: #fff;
+    }
+
+    /* ── SECTIONS ── */
+    section { padding: 96px 48px; max-width: 1100px; margin: 0 auto; }
+
+    .section-label {
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 10px;
+      display: block;
+    }
+    h2 {
+      font-family: var(--mono);
+      font-size: 28px;
+      font-weight: 500;
+      color: var(--white);
+      letter-spacing: 0.02em;
+      margin-bottom: 16px;
+    }
+    .section-sub {
+      color: var(--muted);
+      font-size: 15px;
+      max-width: 600px;
+      margin-bottom: 48px;
+    }
+
+    /* ── HERO ── */
+    #hero {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 0 48px;
+      max-width: 1100px;
+      margin: 0 auto;
+      position: relative;
+    }
+    .hero-eyebrow {
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--green);
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .hero-eyebrow::before {
+      content: '';
+      display: inline-block;
+      width: 32px;
+      height: 1px;
+      background: var(--green);
+    }
+    h1 {
+      font-family: var(--mono);
+      font-size: clamp(40px, 7vw, 80px);
+      font-weight: 400;
+      line-height: 1.05;
+      letter-spacing: -0.01em;
+      color: var(--white);
+      margin-bottom: 24px;
+    }
+    h1 span { color: var(--green); }
+    .hero-sub {
+      font-size: 17px;
+      color: var(--muted);
+      max-width: 520px;
+      line-height: 1.75;
+      margin-bottom: 40px;
+    }
+    .hero-actions {
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+    .hero-eeg {
+      position: absolute;
+      right: 0;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 420px;
+      opacity: 0.18;
+      pointer-events: none;
+    }
+    .hero-badges {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 20px;
+    }
+    .badge {
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: 0.08em;
+      padding: 3px 10px;
+      border-radius: 100px;
+      border: 1px solid var(--dim);
+      color: var(--muted);
+    }
+
+    /* ── EEG animated line ── */
+    .eeg-line {
+      stroke-dasharray: 2000;
+      stroke-dashoffset: 2000;
+      animation: eegDraw 3s ease forwards;
+    }
+    @keyframes eegDraw {
+      to { stroke-dashoffset: 0; }
+    }
+
+    /* ── METRICS GRID ── */
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 16px;
+    }
+    .metric-card {
+      background: rgba(30,35,41,0.6);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 24px;
+      backdrop-filter: blur(16px);
+      transition: border-color 0.25s, transform 0.25s;
+    }
+    .metric-card:hover {
+      border-color: rgba(255,255,255,0.16);
+      transform: translateY(-2px);
+    }
+    .metric-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      margin-bottom: 14px;
+    }
+    .metric-icon-green { background: rgba(0,204,119,0.1); }
+    .metric-icon-purple { background: rgba(160,110,220,0.1); }
+    .metric-icon-orange { background: rgba(240,140,0,0.1); }
+    .metric-icon-blue { background: rgba(80,130,220,0.1); }
+    .metric-title {
+      font-family: var(--mono);
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--white);
+      margin-bottom: 6px;
+    }
+    .metric-desc {
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.65;
+    }
+    .metric-formula {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--dim);
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid rgba(255,255,255,0.05);
+    }
+
+    /* ── ARCHITECTURE ── */
+    .arch-wrap {
+      background: rgba(20,23,30,0.8);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 32px 36px;
+      font-family: var(--mono);
+      font-size: 13px;
+      line-height: 2;
+      overflow-x: auto;
+    }
+    .arch-wrap pre {
+      color: #9CA3AF;
+      white-space: pre;
+    }
+    .arch-wrap .hl-green { color: var(--green); }
+    .arch-wrap .hl-purple { color: var(--purple); }
+    .arch-wrap .hl-orange { color: #E09000; }
+
+    /* ── STEPS ── */
+    .steps {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+    .step {
+      display: flex;
+      gap: 28px;
+      padding: 28px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+    .step:last-child { border-bottom: none; }
+    .step-num {
+      font-family: var(--mono);
+      font-size: 28px;
+      font-weight: 300;
+      color: var(--dim);
+      min-width: 48px;
+      line-height: 1.2;
+    }
+    .step-content h3 {
+      font-family: var(--mono);
+      font-size: 15px;
+      font-weight: 500;
+      color: var(--white);
+      margin-bottom: 6px;
+    }
+    .step-content p {
+      font-size: 14px;
+      color: var(--muted);
+      line-height: 1.7;
+    }
+
+    /* ── SCREENSHOTS ── */
+    .screenshots-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 16px;
+    }
+    .screenshot-slot {
+      background: rgba(20,23,30,0.7);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+      aspect-ratio: 16/9;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .screenshot-slot img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .screenshot-slot .placeholder-text {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--dim);
+      letter-spacing: 0.1em;
+    }
+
+    /* ── INSTALL BLOCK ── */
+    .install-steps {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .code-block {
+      background: rgba(15,18,24,0.9);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 12px;
+      padding: 16px 20px;
+      font-family: var(--mono);
+      font-size: 13px;
+      line-height: 1.8;
+      overflow-x: auto;
+      position: relative;
+    }
+    .code-block .comment { color: #4B5563; }
+    .code-block .cmd { color: #9CA3AF; }
+    .code-block .highlight { color: var(--green); }
+    .code-label {
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 6px;
+      display: block;
+    }
+
+    /* ── DATASET CARD ── */
+    .dataset-card {
+      background: rgba(20,30,25,0.7);
+      border: 1px solid rgba(0,204,119,0.18);
+      border-left: 3px solid rgba(0,204,119,0.5);
+      border-radius: 20px;
+      padding: 32px 36px;
+      display: flex;
+      gap: 48px;
+      flex-wrap: wrap;
+    }
+    .dataset-stat { flex: 1; min-width: 120px; }
+    .dataset-stat .num {
+      font-family: var(--mono);
+      font-size: 32px;
+      font-weight: 400;
+      color: var(--green);
+      line-height: 1;
+      margin-bottom: 4px;
+    }
+    .dataset-stat .label {
+      font-size: 12px;
+      color: var(--muted);
+      font-family: var(--mono);
+      letter-spacing: 0.06em;
+    }
+    .dataset-divider {
+      width: 1px;
+      background: rgba(255,255,255,0.06);
+      align-self: stretch;
+    }
+
+    /* ── REFS ── */
+    .refs {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+    .ref {
+      padding: 18px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.7;
+    }
+    .ref:last-child { border-bottom: none; }
+    .ref strong { color: #9CA3AF; font-weight: 400; }
+
+    /* ── FOOTER ── */
+    footer {
+      border-top: 1px solid rgba(255,255,255,0.05);
+      padding: 40px 48px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: gap;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+    .footer-brand {
+      font-family: var(--mono);
+      font-size: 13px;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+    }
+    .footer-links {
+      display: flex;
+      gap: 24px;
+    }
+    .footer-links a {
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      color: var(--dim);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+    .footer-links a:hover { color: var(--muted); }
+
+    /* ── DIVIDER ── */
+    .full-divider {
+      height: 1px;
+      background: rgba(255,255,255,0.05);
+      margin: 0;
+    }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 768px) {
+      nav { padding: 0 24px; }
+      .nav-links { display: none; }
+      #hero { padding: 120px 24px 80px; }
+      section { padding: 64px 24px; }
+      .hero-eeg { display: none; }
+      .dataset-card { flex-direction: column; gap: 24px; }
+      .dataset-divider { display: none; }
+      footer { padding: 32px 24px; flex-direction: column; gap: 16px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- NAV -->
+  <nav id="nav">
+    <a class="nav-brand" href="#">BRAIN BATTERY</a>
+    <ul class="nav-links">
+      <li><a href="#measures">Metrics</a></li>
+      <li><a href="#how-it-works">How It Works</a></li>
+      <li><a href="#architecture">Model</a></li>
+      <li><a href="#screenshots">Screenshots</a></li>
+      <li><a href="#get-started">Get Started</a></li>
+    </ul>
+    <div class="nav-cta">
+      <a class="btn btn-ghost" href="https://www.kaggle.com/datasets/brandon19834/universe-merged-withzero-noasr" target="_blank">Dataset</a>
+      <a class="btn btn-green" href="https://github.com/NotAverageGitHubUser/Brain-Battery" target="_blank">GitHub</a>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <section id="hero">
+    <!-- Animated EEG illustration -->
+    <svg class="hero-eeg" viewBox="0 0 420 280" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path class="eeg-line" d="M0 80 L40 80 L50 60 L60 100 L70 40 L80 120 L90 80 L130 80
+        L140 70 L150 90 L160 50 L170 110 L180 80 L220 80
+        L230 65 L240 95 L250 45 L260 115 L270 80 L310 80
+        L320 72 L330 88 L340 55 L350 105 L360 80 L420 80"
+        stroke="#00CC77" stroke-width="1.5" fill="none" />
+      <path class="eeg-line" style="animation-delay:0.4s"
+        d="M0 140 L40 140 L50 125 L60 155 L70 108 L80 168 L90 140 L130 140
+        L140 130 L150 150 L160 115 L170 165 L180 140 L220 140
+        L230 128 L240 152 L250 110 L260 170 L270 140 L310 140
+        L320 132 L330 148 L340 118 L350 162 L360 140 L420 140"
+        stroke="#A06EDC" stroke-width="1.5" fill="none" />
+      <path class="eeg-line" style="animation-delay:0.8s"
+        d="M0 200 L40 200 L48 188 L56 212 L68 178 L76 222 L84 200 L130 200
+        L138 192 L148 208 L158 182 L168 218 L178 200 L220 200
+        L228 190 L238 210 L248 180 L258 220 L268 200 L310 200
+        L318 193 L328 207 L338 183 L348 217 L358 200 L420 200"
+        stroke="#E09000" stroke-width="1.5" fill="none" />
+    </svg>
+
+    <div class="hero-eyebrow">Open Source · EEG · Deep Learning</div>
+    <h1>Real-time<br><span>Cognitive Load</span><br>Monitor</h1>
+    <p class="hero-sub">
+      Measures cognitive workload, mental fatigue, and focus streaks in real time
+      using EEG signals — powered by a custom multimodal neural network trained on
+      12 subjects with Leave-One-Subject-Out validation.
+    </p>
+    <div class="hero-badges">
+      <span class="badge">Python 3.10+</span>
+      <span class="badge">Streamlit</span>
+      <span class="badge">PyTorch</span>
+      <span class="badge">UNIVERSE Dataset</span>
+      <span class="badge">LOSO Validated</span>
+    </div>
+    <div class="hero-actions">
+      <a class="btn btn-green" href="https://github.com/NotAverageGitHubUser/Brain-Battery" target="_blank">
+        View on GitHub
+      </a>
+      <a class="btn btn-purple" href="https://www.kaggle.com/datasets/brandon19834/universe-merged-withzero-noasr" target="_blank">
+        Get Dataset
+      </a>
+      <a class="btn btn-ghost" href="#get-started">
+        Get Started
+      </a>
+    </div>
+  </section>
+
+  <div class="full-divider"></div>
+
+  <!-- WHAT IT MEASURES -->
+  <section id="measures">
+    <span class="section-label">Metrics</span>
+    <h2>What Brain Battery Measures</h2>
+    <p class="section-sub">
+      Four distinct signals, each grounded in published neuroscience research.
+      Not emotional stress — cognitive workload is a different construct entirely.
+    </p>
+    <div class="metrics-grid">
+      <div class="metric-card">
+        <div class="metric-icon metric-icon-green">⚡</div>
+        <div class="metric-title">Cognitive Workload</div>
+        <div class="metric-desc">
+          Probability of high mental demand, estimated by a three-tower multimodal neural network
+          fusing EEG, physiological, and spectral features.
+        </div>
+        <div class="metric-formula">P(high CW) = softmax(workload_head(EEG ⊕ Physio ⊕ Freq))₁</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-icon metric-icon-orange">〜</div>
+        <div class="metric-title">Mental Fatigue</div>
+        <div class="metric-desc">
+          EEG spectral ratio between theta and alpha bands. Rising theta relative to alpha
+          indicates cognitive fatigue — no model involved, pure signal processing.
+        </div>
+        <div class="metric-formula">log θ_power − log α_power &nbsp; (Klimesch, 1999)</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-icon metric-icon-purple">◈</div>
+        <div class="metric-title">Focus Streak</div>
+        <div class="metric-desc">
+          Timer counting continuous low-workload windows. A grace period of three consecutive
+          high-load windows is required before the streak resets — resists momentary spikes.
+        </div>
+        <div class="metric-formula">3-window grace period before reset</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-icon metric-icon-blue">◎</div>
+        <div class="metric-title">Signal Quality</div>
+        <div class="metric-desc">
+          Per-channel variance heuristic in live mode; spectral attention weight proxy in demo mode.
+          Used to weight modality contributions inside the fusion layer.
+        </div>
+        <div class="metric-formula">σ heuristic · Viola et al. (2009)</div>
+      </div>
+    </div>
+  </section>
+
+  <div class="full-divider"></div>
+
+  <!-- HOW IT WORKS -->
+  <section id="how-it-works">
+    <span class="section-label">Workflow</span>
+    <h2>How It Works</h2>
+    <p class="section-sub">Two modes: replay pre-recorded subjects, or stream live from a Muse headband.</p>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">01</div>
+        <div class="step-content">
+          <h3>Choose a mode</h3>
+          <p>
+            <strong style="color:#A06EDC">Demo mode</strong> replays 12 pre-recorded subjects
+            from the UNIVERSE dataset with adjustable playback speed, subject selector, and full
+            physio + EEG waveforms.<br><br>
+            <strong style="color:#00CC77">Live mode</strong> connects to a Muse headband via
+            BlueMuse (Windows LSL bridge) for real-time inference. Live mode uses EEG only —
+            Muse does not capture physiological signals.
+          </p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">02</div>
+        <div class="step-content">
+          <h3>Run a session</h3>
+          <p>
+            The model processes 1-second EEG windows in real time, updating the workload gauge,
+            fatigue index, and focus streak with each frame. Session data is logged automatically.
+          </p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">03</div>
+        <div class="step-content">
+          <h3>Review your history</h3>
+          <p>
+            The History tab shows all past sessions as a bar chart with per-session averages for
+            workload, fatigue, and focus time. Each session is stored locally in
+            <code style="font-family:var(--mono);font-size:12px;color:#9CA3AF">history.jsonl</code>.
+          </p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">04</div>
+        <div class="step-content">
+          <h3>Personalization (Live mode)</h3>
+          <p>
+            An online Bayesian calibration layer adapts the workload threshold to your individual
+            cognitive baseline across sessions. Zero-calibration (population prior) → calibrating
+            → personalized — the model gets better as it learns you.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="full-divider"></div>
+
+  <!-- ARCHITECTURE -->
+  <section id="architecture">
+    <span class="section-label">Model</span>
+    <h2>Architecture</h2>
+    <p class="section-sub">
+      A three-tower multimodal network with learned attention fusion, trained with
+      Leave-One-Subject-Out cross-validation on 12 subjects.
+    </p>
+    <div class="arch-wrap">
+<pre>
+  <span class="hl-green">EEG</span>     (4 ch × 256 samples)   →   <span class="hl-green">EEGNet</span>  (depthwise/separable CNN)   ─┐
+  <span class="hl-orange">Physio</span>  (BVP + HR + EDA)        →   <span class="hl-orange">1D-CNN</span>  (3-layer)                   ├→  Attention Fusion  →  Workload Head  →  P(high CW)
+  <span class="hl-purple">Spectral</span> (36 features)           →   <span class="hl-purple">MLP</span>     (with BatchNorm + Dropout)  ─┘
+
+  Attention Fusion:  learned per-modality weights conditioned on signal quality index
+  Workload Head:     Linear(FUSION_DIM, 128) → BN → ReLU → Dropout → Linear → Softmax
+  Labels:            NASA-TLX binary (high / low workload)
+  Validation:        LOSO  (12 folds, one subject held out per fold)
+</pre>
+    </div>
+    <div style="margin-top:24px;display:flex;gap:16px;flex-wrap:wrap">
+      <div class="metric-card" style="flex:1;min-width:200px">
+        <div class="metric-title" style="margin-bottom:8px">EEGNet</div>
+        <div class="metric-desc">Compact depthwise-separable CNN purpose-built for EEG. Fewer parameters than generic CNNs while capturing temporal and spatial features across channels.</div>
+        <div class="metric-formula">Lawhern et al. (2018)</div>
+      </div>
+      <div class="metric-card" style="flex:1;min-width:200px">
+        <div class="metric-title" style="margin-bottom:8px">Attention Fusion</div>
+        <div class="metric-desc">Signal quality index (SQI) for each modality is passed alongside tower embeddings. The fusion layer learns to down-weight noisy or missing modalities.</div>
+        <div class="metric-formula">Conditioned on SQI vector</div>
+      </div>
+      <div class="metric-card" style="flex:1;min-width:200px">
+        <div class="metric-title" style="margin-bottom:8px">LOSO Validation</div>
+        <div class="metric-desc">Each of the 12 folds holds out one subject completely. This measures how well spectral features generalize to unseen individuals — the hardest generalization test.</div>
+        <div class="metric-formula">n=12 subjects · zero data leakage</div>
+      </div>
+    </div>
+  </section>
+
+  <div class="full-divider"></div>
+
+  <!-- SCREENSHOTS -->
+  <section id="screenshots">
+    <span class="section-label">Screenshots</span>
+    <h2>Screenshots</h2>
+    <p class="section-sub">Demo mode, live mode, history view, and the first-run setup screen.</p>
+    <div class="screenshots-grid">
+      <div class="screenshot-slot">
+        <!-- Replace with: <img src="assets/screenshot-home.png" alt="Home page" /> -->
+        <span class="placeholder-text">HOME PAGE</span>
+        <span style="font-size:11px;color:#374151;font-family:var(--mono)">replace with screenshot</span>
+      </div>
+      <div class="screenshot-slot">
+        <!-- Replace with: <img src="assets/screenshot-demo.png" alt="Demo mode dashboard" /> -->
+        <span class="placeholder-text">DEMO MODE</span>
+        <span style="font-size:11px;color:#374151;font-family:var(--mono)">replace with screenshot</span>
+      </div>
+      <div class="screenshot-slot">
+        <!-- Replace with: <img src="assets/screenshot-live.png" alt="Live mode dashboard" /> -->
+        <span class="placeholder-text">LIVE MODE</span>
+        <span style="font-size:11px;color:#374151;font-family:var(--mono)">replace with screenshot</span>
+      </div>
+      <div class="screenshot-slot">
+        <!-- Replace with: <img src="assets/screenshot-history.png" alt="History tab" /> -->
+        <span class="placeholder-text">HISTORY</span>
+        <span style="font-size:11px;color:#374151;font-family:var(--mono)">replace with screenshot</span>
+      </div>
+    </div>
+  </section>
+
+  <div class="full-divider"></div>
+
+  <!-- GET STARTED -->
+  <section id="get-started">
+    <span class="section-label">Installation</span>
+    <h2>Get Started</h2>
+    <p class="section-sub">Runs locally. No cloud account needed for Demo mode — just Python and the dataset.</p>
+    <div class="install-steps">
+      <span class="code-label">1 — Clone and install</span>
+      <div class="code-block">
+        <span class="comment"># clone the repo</span><br>
+        <span class="cmd">git clone https://github.com/NotAverageGitHubUser/Brain-Battery.git</span><br>
+        <span class="cmd">cd Brain-Battery</span><br><br>
+        <span class="comment"># install dependencies</span><br>
+        <span class="cmd">pip install streamlit torch numpy scipy plotly kaggle</span>
+      </div>
+      <span class="code-label">2 — Launch (dataset downloads automatically on first run)</span>
+      <div class="code-block">
+        <span class="highlight">python -m streamlit run dashboard.py</span>
+      </div>
+      <div style="background:rgba(0,204,119,0.05);border:1px solid rgba(0,204,119,0.15);border-radius:12px;padding:16px 20px;font-size:13px;color:var(--muted)">
+        On first launch, Brain Battery will show a setup screen. Enter your
+        <a href="https://www.kaggle.com/settings/account" target="_blank"
+           style="color:var(--green);text-decoration:none">Kaggle API credentials</a>
+        and click <strong style="color:#D1D5DB">Download Dataset</strong> — the
+        ~300 MB dataset downloads and unzips automatically.
+      </div>
+      <span class="code-label">3 — Live mode (optional — Muse headband required)</span>
+      <div class="code-block">
+        <span class="comment"># install BlueMuse (Windows), start LSL stream, then connect in the app</span><br>
+        <span class="cmd">https://github.com/kowalej/BlueMuse</span>
+      </div>
+    </div>
+  </section>
+
+  <div class="full-divider"></div>
+
+  <!-- DATASET -->
+  <section id="dataset">
+    <span class="section-label">Dataset</span>
+    <h2>UNIVERSE Dataset</h2>
+    <p class="section-sub">
+      EEG and physiological recordings from subjects performing tasks at varying mental demand levels,
+      labeled with NASA Task Load Index scores.
+    </p>
+    <div class="dataset-card">
+      <div class="dataset-stat">
+        <div class="num">12</div>
+        <div class="label">Subjects</div>
+      </div>
+      <div class="dataset-divider"></div>
+      <div class="dataset-stat">
+        <div class="num">4</div>
+        <div class="label">EEG Channels</div>
+      </div>
+      <div class="dataset-divider"></div>
+      <div class="dataset-stat">
+        <div class="num">3</div>
+        <div class="label">Physio Signals</div>
+      </div>
+      <div class="dataset-divider"></div>
+      <div class="dataset-stat">
+        <div class="num">~300</div>
+        <div class="label">MB Total</div>
+      </div>
+      <div class="dataset-divider"></div>
+      <div class="dataset-stat">
+        <div class="num">LOSO</div>
+        <div class="label">Validation</div>
+      </div>
+    </div>
+    <div style="margin-top:20px">
+      <a class="btn btn-green" href="https://www.kaggle.com/datasets/brandon19834/universe-merged-withzero-noasr" target="_blank">
+        Download on Kaggle →
+      </a>
+    </div>
+  </section>
+
+  <div class="full-divider"></div>
+
+  <!-- REFERENCES -->
+  <section id="references">
+    <span class="section-label">Research</span>
+    <h2>References</h2>
+    <div class="refs">
+      <div class="ref"><strong>Klimesch (1999)</strong> EEG alpha and theta oscillations reflect cognitive and memory performance. <em>Brain Research Reviews</em>, 29, 169–195.</div>
+      <div class="ref"><strong>Lawhern et al. (2018)</strong> EEGNet: A compact convolutional neural network for EEG-based brain-computer interfaces. <em>J. Neural Engineering</em>, 15(5).</div>
+      <div class="ref"><strong>Holm et al. (2009)</strong> Psychophysiological performance metrics for adaptive automation during simulated flight. <em>Psychophysiology</em>, 46(5), 583–598.</div>
+      <div class="ref"><strong>Schirrmeister et al. (2017)</strong> Deep learning with convolutional neural networks for EEG decoding and visualization. <em>Human Brain Mapping</em>, 38(9), 4456–4473.</div>
+      <div class="ref"><strong>Viola et al. (2009)</strong> Semi-automatic identification of independent components representing EEG artifact. <em>J. Neuroscience Methods</em>, 182(1), 15–26.</div>
+      <div class="ref"><strong>Welford (1962)</strong> On changes of performance with age. <em>Technometrics</em>, 4(3), 419–420.</div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <span class="footer-brand">BRAIN BATTERY — Brandon Dong</span>
+    <div class="footer-links">
+      <a href="https://github.com/NotAverageGitHubUser/Brain-Battery" target="_blank">GitHub</a>
+      <a href="https://www.kaggle.com/datasets/brandon19834/universe-merged-withzero-noasr" target="_blank">Dataset</a>
+      <a href="mailto:brandondong999@gmail.com">Contact</a>
+    </div>
+  </footer>
+
+  <script>
+    // Navbar scroll effect
+    const nav = document.getElementById('nav');
+    window.addEventListener('scroll', () => {
+      nav.classList.toggle('scrolled', window.scrollY > 40);
+    });
+  </script>
+</body>
+</html>

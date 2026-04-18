@@ -96,8 +96,11 @@ except ImportError:
 # ══════════════════════════════════════════════════════════════════════════════
 # CONFIG
 # ══════════════════════════════════════════════════════════════════════════════
-DATA_DIR   = "Data"
-MODEL_PATH = "model/best_full_subj_17.pt"
+DATA_DIR       = "Data"
+MODEL_PATH     = "model/best_full_subj_17.pt"
+KAGGLE_DATASET = "brandon19834/universe-merged-withzero-noasr"
+KAGGLE_URL     = "https://www.kaggle.com/datasets/brandon19834/universe-merged-withzero-noasr"
+DATA_FILES     = ["eeg.npy", "physio.npy", "label_workload.npy", "subjects.npy"]
 
 PROFILES_DIR = Path("user_profiles"); PROFILES_DIR.mkdir(exist_ok=True)
 HISTORY_FILE = Path("history.jsonl")
@@ -1004,6 +1007,12 @@ def load_subject_epochs(
     return eeg, physio, labels, "OK"
 
 
+def check_data_ready() -> bool:
+    """Return True only when all four required .npy files exist in DATA_DIR."""
+    d = Path(DATA_DIR)
+    return all((d / f).exists() for f in DATA_FILES)
+
+
 @st.cache_data(hash_funcs={np.ndarray: lambda x: (x.shape, int(x.sum()))})
 def precompute_freq_features(eeg_all: np.ndarray, physio_all: np.ndarray) -> np.ndarray:
     """
@@ -1279,7 +1288,138 @@ def make_history_chart(records: list) -> go.Figure:
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# 13. HOME PAGE
+# 13. SETUP PAGE  (shown on first run when Data/ files are absent)
+# ══════════════════════════════════════════════════════════════════════════════
+
+def render_setup():
+    """First-run setup screen shown when Data/ files are missing."""
+    st.markdown("""
+<style>
+div[data-testid="stSidebar"] { display: none !important; }
+.setup-card {
+    background: rgba(30,35,41,0.65);
+    border: 1px solid rgba(255,255,255,0.09);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-radius: 24px;
+    padding: 36px 36px;
+    max-width: 680px;
+    margin: 0 auto;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.45);
+}
+</style>""", unsafe_allow_html=True)
+
+    st.markdown("""
+<div style="min-height:12vh"></div>
+<div class="setup-card">
+  <div style="font-family:'DM Mono',monospace;font-size:11px;color:#9CA3AF;
+              letter-spacing:0.14em;text-transform:uppercase;margin-bottom:8px">
+    FIRST-TIME SETUP
+  </div>
+  <h1 style="font-family:'DM Mono',monospace;font-size:28px;color:#FFFFFF;
+             font-weight:500;letter-spacing:0.04em;margin:0 0 10px 0">
+    Dataset Required
+  </h1>
+  <p style="color:#6B7280;font-size:14px;font-family:'DM Sans',sans-serif;
+            line-height:1.7;margin:0">
+    Brain Battery needs the UNIVERSE EEG dataset (~300 MB, 4 files) to run Demo mode.
+    Download it automatically with your Kaggle API key, or follow the manual steps below.
+  </p>
+</div>
+<div style="min-height:20px"></div>
+""", unsafe_allow_html=True)
+
+    # ── Auto-download ─────────────────────────────────────────────────────────
+    with st.expander("Auto-Download via Kaggle API", expanded=True):
+        st.markdown("""
+<p style="color:#9CA3AF;font-size:13px;font-family:'DM Sans',sans-serif;
+          line-height:1.6;margin-bottom:4px">
+  Find your API key at <strong style="color:#D1D5DB">kaggle.com → Account → API →
+  Create New Token</strong>. Credentials are used only for this download and never stored.
+</p>""", unsafe_allow_html=True)
+        col1, col2 = st.columns(2)
+        with col1:
+            kg_user = st.text_input("Kaggle Username", placeholder="your_username",
+                                     key="setup_kg_user")
+        with col2:
+            kg_key = st.text_input("Kaggle API Key", placeholder="paste key here",
+                                    type="password", key="setup_kg_key")
+
+        dl_btn = st.button("Download Dataset", type="primary",
+                            use_container_width=True, key="setup_dl_btn",
+                            disabled=(not kg_user or not kg_key))
+
+        if dl_btn:
+            status = st.empty()
+            prog   = st.progress(0)
+            status.info("Authenticating with Kaggle...")
+            prog.progress(5)
+            try:
+                import shutil as _shutil
+                import os as _os
+                _os.environ["KAGGLE_USERNAME"] = kg_user
+                _os.environ["KAGGLE_KEY"]      = kg_key
+                from kaggle.api.kaggle_api_extended import KaggleApiExtended
+                api = KaggleApiExtended()
+                api.authenticate()
+                prog.progress(15)
+                status.info("Downloading dataset (~300 MB) — this may take a minute...")
+                _tmp = Path("_kaggle_tmp"); _tmp.mkdir(exist_ok=True)
+                api.dataset_download_files(KAGGLE_DATASET, path=str(_tmp), unzip=True)
+                prog.progress(80)
+                status.info("Moving files into Data/ ...")
+                _data = Path(DATA_DIR); _data.mkdir(exist_ok=True)
+                for _f in DATA_FILES:
+                    _matches = list(_tmp.rglob(_f))
+                    if _matches:
+                        _shutil.move(str(_matches[0]), str(_data / _f))
+                _shutil.rmtree(_tmp, ignore_errors=True)
+                prog.progress(100)
+                _missing = [f for f in DATA_FILES if not (_data / f).exists()]
+                if _missing:
+                    status.error(f"Download finished but files not found: {_missing}. "
+                                 "Check the dataset contents on Kaggle.")
+                else:
+                    status.success("All files downloaded! Launching Brain Battery...")
+                    time.sleep(1)
+                    st.rerun()
+            except ImportError:
+                status.error("The `kaggle` package is not installed. "
+                             "Run `pip install kaggle` and restart the app.")
+            except Exception as _e:
+                status.error(f"Download failed: {_e}")
+
+    # ── Manual instructions ───────────────────────────────────────────────────
+    with st.expander("Manual Download", expanded=False):
+        st.markdown(f"""
+<ol style="color:#D1D5DB;font-size:14px;font-family:'DM Sans',sans-serif;
+           line-height:2.1;padding-left:20px;margin:0">
+  <li>Open the dataset page (free Kaggle account required):<br>
+      <a href="{KAGGLE_URL}" target="_blank"
+         style="color:#A06EDC">{KAGGLE_URL} ↗</a>
+  </li>
+  <li>Click <strong>Download</strong> and unzip the archive.</li>
+  <li>Copy these four files into the <code>Data/</code> folder
+      (next to <code>dashboard.py</code>):<br>
+      <code>eeg.npy</code> &nbsp; <code>physio.npy</code> &nbsp;
+      <code>label_workload.npy</code> &nbsp; <code>subjects.npy</code>
+  </li>
+  <li>Click the button below once the files are in place.</li>
+</ol>
+""", unsafe_allow_html=True)
+        if st.button("I've copied the files — check again",
+                      use_container_width=True, key="setup_manual_check"):
+            if check_data_ready():
+                st.success("Files detected! Launching Brain Battery...")
+                time.sleep(0.8)
+                st.rerun()
+            else:
+                _still = [f for f in DATA_FILES if not (Path(DATA_DIR) / f).exists()]
+                st.error(f"Still missing: {', '.join(_still)}")
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# 13b. HOME PAGE
 # ══════════════════════════════════════════════════════════════════════════════
 
 def render_home():
@@ -1485,6 +1625,10 @@ def render_home():
 # ══════════════════════════════════════════════════════════════════════════════
 # 14. PAGE ROUTING
 # ══════════════════════════════════════════════════════════════════════════════
+if not check_data_ready():
+    render_setup()
+    st.stop()
+
 if st.session_state.page == "home":
     render_home()
     st.stop()
