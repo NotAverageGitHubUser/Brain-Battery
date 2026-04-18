@@ -1,5 +1,5 @@
 """
-Brain Battery — Cognitive Bandwidth Monitor  v4.2
+Brain Battery — Cognitive Workload Monitor  v5.0
 ==================================================
 WHAT THIS MEASURES
 ------------------
@@ -31,25 +31,27 @@ Spectral features generalize across subjects better than raw EEG or
 physiological signals — but no modality achieves reliable zero-calibration
 at the individual level.
 
-CHANGES v4.2
+CHANGES v5.0
 ------------
-Task 1 — State machine fixes:
-  • Subject change in sidebar now explicitly sets running=False and
-    calls _reset_history() before st.rerun(). No stale loop state.
-  • Restart button now calls st.rerun() immediately after resetting all
-    deques — does not rely on fall-through logic.
-  • acquire_data guard simplified: loop always calls st.rerun() when
-    running is True (even on the first frame), so the loop never dies.
+Phase 1 — State machine hardening:
+  • Unified single dynamic button: "▶ Start" / "↺ Restart Run".
+  • Frame freeze: fragment renders final values persistently after run ends.
+  • Subject/Home navigation resets frame_idx, deques, _run_complete.
+  • History append fires before any transition away from the dashboard.
 
-Task 2 — Bandwidth → Cognitive Workload reversal:
-  • Metric: Workload = 100 × P(high CW)   (was 100×(1−P))
-  • personalized_workload() replaces personalized_bandwidth() — reversal
-    of the normalisation direction.
-  • wl_hist replaces bw_hist throughout session state, charts, logger.
-  • _wl_color() 0–30 green / 30–70 amber / 70–100 red (high = bad).
-  • Pill text: "LOW EFFORT" / "ACTIVE" / "HEAVY LOAD".
-  • Energy bar fills left-to-right as workload rises; labels read
-    "Resting" (left) and "Overloaded" (right).
+Phase 2 — Portal homepage swap:
+  • st.session_state.page = "home" default.
+  • render_home() renders landing page; sidebar hidden via CSS.
+  • Two glass cards select Demo / Live mode and set page = "app".
+
+Phase 3 — Pure white glassmorphism:
+  • Cyan/teal (#00B3CC) replaced by white (#FFFFFF) / silver (#D1D5DB).
+  • .bb-card: rgba(30,35,41,0.6) + backdrop-filter blur(12px).
+  • Sidebar: NAVIGATION / DEMO SETTINGS / LIVE CONNECTIVITY sections.
+
+Phase 4 — LLM Wiki bookkeeping:
+  • Troubleshooting.md updated (frame-freeze pattern documented).
+  • Implementation_Log.md entry appended.
 
 CRITICAL BUG FIX (v3.0, retained)
 -----------------------------------
@@ -92,10 +94,10 @@ except ImportError:
     PYLSL_AVAILABLE = False
 
 # ══════════════════════════════════════════════════════════════════════════════
-# CONFIG  ── edit these two paths before running locally
+# CONFIG
 # ══════════════════════════════════════════════════════════════════════════════
-DATA_DIR   = r"/kaggle/input/datasets/brandon19834/universe-merged-withzero-noasr"
-MODEL_PATH = r"/kaggle/input/datasets/brandon19834/best-model-subj-11/best_full_subj_17.pt"
+DATA_DIR   = "Data"
+MODEL_PATH = "model/best_full_subj_17.pt"
 
 PROFILES_DIR = Path("user_profiles"); PROFILES_DIR.mkdir(exist_ok=True)
 HISTORY_FILE = Path("history.jsonl")
@@ -122,43 +124,66 @@ html { overflow-anchor: none; }
 
 div[data-testid="stSidebar"] {
     background: #0D0F14 !important;
-    border-right: 1px solid #1A1D24;
+    border-right: 1px solid rgba(255,255,255,0.06);
 }
 
 h1, h2, h3 { font-family: 'DM Mono', monospace !important; }
 div[data-testid="stMetricValue"] {
     font-family: 'DM Mono', monospace !important;
-    color: #00B3CC !important;
+    color: #FFFFFF !important;
     font-size: 1.5rem !important;
 }
 
-/* ── Cards ── */
+/* ── Glassmorphism Cards ── */
 .bb-card {
-    background: #1E2329;
-    border: 1px solid #2A2F3A;
-    border-radius: 16px;
+    background: rgba(30, 35, 41, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-radius: 24px;
     padding: 20px 22px;
     margin-bottom: 10px;
 }
 .bb-card-hero {
-    background: linear-gradient(135deg, #111827 0%, #1A2033 100%);
-    border: 1px solid #1E3A5F;
-    border-radius: 16px;
+    background: rgba(30, 35, 41, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-radius: 24px;
     padding: 22px 24px;
     margin-bottom: 10px;
 }
 .bb-card-accent {
-    background: #0D1A1C;
-    border: 1px solid #00B3CC;
-    border-radius: 16px;
+    background: rgba(20, 30, 25, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-radius: 24px;
     padding: 20px 22px;
     margin-bottom: 10px;
 }
-.bb-divider { height: 1px; background: #1A1D24; margin: 8px 0; }
+/* Home page glass choice cards */
+.home-card {
+    background: rgba(30, 35, 41, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-radius: 24px;
+    padding: 40px 32px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s;
+    height: 100%;
+}
+.home-card:hover {
+    border-color: rgba(255,255,255,0.3);
+    background: rgba(40, 46, 55, 0.75);
+}
+.bb-divider { height: 1px; background: rgba(255,255,255,0.06); margin: 8px 0; }
 
 /* ── Typography ── */
 .bb-label {
-    color: #4B5563;
+    color: #6B7280;
     font-size: 10px;
     text-transform: uppercase;
     letter-spacing: 0.12em;
@@ -175,8 +200,8 @@ div[data-testid="stMetricValue"] {
 }
 .bb-sub   { color: #8B949E; font-size: 12px; font-family: 'DM Sans', sans-serif; }
 .bb-desc  { color: #8B949E; font-size: 13px; font-family: 'DM Sans', sans-serif; line-height: 1.6; }
-.bb-title { font-family: 'DM Mono', monospace; color: #00B3CC;
-            font-size: 22px; font-weight: 500; letter-spacing: -0.02em; margin: 0; }
+.bb-title { font-family: 'DM Mono', monospace; color: #FFFFFF;
+            font-size: 22px; font-weight: 500; letter-spacing: 0.05em; margin: 0; }
 
 .feed-section-title {
     font-family: 'DM Mono', monospace;
@@ -204,13 +229,13 @@ div[data-testid="stMetricValue"] {
 .pill-green  { background: rgba(0,200,100,0.08);  color: #00CC77; border: 1px solid rgba(0,200,100,0.2); }
 .pill-orange { background: rgba(240,140,0,0.08);  color: #E09000; border: 1px solid rgba(240,140,0,0.2); }
 .pill-red    { background: rgba(220,60,60,0.08);  color: #E05050; border: 1px solid rgba(220,60,60,0.2); }
-.pill-blue   { background: rgba(0,179,204,0.08);  color: #00B3CC; border: 1px solid rgba(0,179,204,0.2); }
+.pill-white  { background: rgba(255,255,255,0.06); color: #FFFFFF; border: 1px solid rgba(255,255,255,0.15); }
 .pill-purple { background: rgba(160,110,220,0.08);color: #A06EDC; border: 1px solid rgba(160,110,220,0.2); }
 .pill-dim    { background: rgba(107,114,128,0.08);color: #6B7280; border: 1px solid rgba(107,114,128,0.2); }
 
 /* ── Energy bar (workload — fills as load rises) ── */
 .energy-bar-wrap {
-    background: #262B34;
+    background: rgba(38,43,52,0.8);
     border-radius: 100px;
     height: 12px;
     width: 100%;
@@ -240,12 +265,12 @@ div[data-testid="stMetricValue"] {
     100% { opacity: 0.4; }
 }
 .skeleton-block {
-    background: #1E2329;
+    background: rgba(30,35,41,0.8);
     border-radius: 12px;
     animation: skeletonPulse 1.6s ease-in-out infinite;
 }
 .skeleton-ring {
-    background: #1E2329;
+    background: rgba(30,35,41,0.8);
     border-radius: 50%;
     animation: skeletonPulse 1.6s ease-in-out infinite;
 }
@@ -263,9 +288,10 @@ div[data-testid="column"]        { padding: 0 5px !important; }
 
 /* ── Connection card ── */
 .conn-card {
-    background: #1E2329;
-    border: 1px solid #2A2F3A;
-    border-radius: 20px;
+    background: rgba(30,35,41,0.6);
+    border: 1px solid rgba(255,255,255,0.1);
+    backdrop-filter: blur(12px);
+    border-radius: 24px;
     padding: 60px 40px;
     text-align: center;
     margin: 40px auto;
@@ -274,8 +300,8 @@ div[data-testid="column"]        { padding: 0 5px !important; }
 
 /* ── Research banner ── */
 .research-banner {
-    background: linear-gradient(90deg, rgba(0,179,204,0.04) 0%, transparent 100%);
-    border-left: 2px solid #00B3CC;
+    background: linear-gradient(90deg, rgba(255,255,255,0.03) 0%, transparent 100%);
+    border-left: 2px solid rgba(255,255,255,0.2);
     padding: 10px 16px;
     border-radius: 0 8px 8px 0;
     margin-bottom: 14px;
@@ -284,7 +310,7 @@ div[data-testid="column"]        { padding: 0 5px !important; }
 /* ── History table ── */
 .hist-row {
     display: flex; align-items: center;
-    padding: 9px 14px; border-bottom: 1px solid #1A1D24;
+    padding: 9px 14px; border-bottom: 1px solid rgba(255,255,255,0.05);
     gap: 12px; font-size: 12px;
 }
 .hist-row:last-child { border-bottom: none; }
@@ -298,6 +324,18 @@ div[data-testid="column"]        { padding: 0 5px !important; }
     border-collapse: collapse;
 }
 .metric-table td { padding: 4px 0; }
+
+/* ── Sidebar section labels ── */
+.sidebar-section {
+    color: #D1D5DB;
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    font-family: 'DM Mono', monospace;
+    margin: 14px 0 6px 0;
+    display: block;
+    opacity: 0.6;
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -390,14 +428,7 @@ def personalized_threshold(p: dict) -> float:
 def personalized_workload(cw_prob: float, p: dict) -> float:
     """
     Map raw cw_prob to 0–100 workload using user's personal CW range.
-
-    Workload = ((cw_prob − r_min) / (r_max − r_min)) × 100
-
     High output = high workload = BAD.
-    Normalises to the individual's personal range so the full 0–100 scale
-    is used for every person regardless of their resting baseline.
-    Contrast with personalized_bandwidth (v4.1) which was inverted:
-    that mapped high P(CW) to low score. We now want high P(CW) → high %.
     """
     lo, hi = p["range_min"], p["range_max"]
     return round(np.clip((cw_prob - lo) / max(hi - lo, 0.05), 0, 1) * 100.0, 1)
@@ -410,17 +441,7 @@ def personalized_workload(cw_prob: float, p: dict) -> float:
 class FocusStreak:
     """
     Tracks continuous low-CW windows as a focus streak.
-
-    Grace period: streak resets only after GRACE_WINDOWS consecutive
-    high-CW frames — single noisy frames do not break a valid streak.
-    Inspired by heart-rate zone tracking (Garmin, 2019).
-
-    Attributes
-    ----------
-    seconds       : total focused seconds this session
-    grace_count   : consecutive high-CW frames since last focus window
-    GRACE_WINDOWS : highs required to reset (default 3)
-    WINDOW_SEC    : epoch duration in seconds (default 2)
+    Grace period: streak resets only after GRACE_WINDOWS consecutive high-CW frames.
     """
     GRACE_WINDOWS = 3
     WINDOW_SEC    = 2
@@ -457,14 +478,9 @@ class FocusStreak:
 
 def is_signal_stable(eeg_epoch: np.ndarray) -> Tuple[bool, str]:
     """
-    Per-channel std heuristic after instance normalisation (std≈1.0 for clean signal).
-
-    Rules
-    -----
+    Per-channel std heuristic after instance normalisation.
     std < 0.01 → flat line / disconnected electrode
     std > 3.0  → jaw clench / movement artefact
-
-    Returns (stable: bool, reason: str).
     Reference: Viola et al. (2009) J Neurosci Methods 182(1):15-26.
     """
     ch_std = eeg_epoch.std(axis=1)
@@ -748,9 +764,7 @@ def precompute_freq_features(eeg_all: np.ndarray, physio_all: np.ndarray) -> np.
 def _reset_history():
     """
     Clear display history and accuracy counters.
-    wl_hist initialised to 0.0 (0% workload = resting state).
-    fatigue_hist initialised to 0.0.
-    Called on: subject change, mode switch, restart button.
+    Called on: subject change, mode switch, restart, Home navigation.
     """
     st.session_state.wl_hist      = collections.deque([0.0]*100, maxlen=100)
     st.session_state.fatigue_hist = collections.deque([0.0]*100, maxlen=100)
@@ -764,7 +778,21 @@ def _reset_history():
         st.session_state.streak.reset()
 
 
+def _save_session_history():
+    """Save current session to history before navigating away. No-op if no data."""
+    if st.session_state.n_total > 0 and not st.session_state._run_complete:
+        acc_final = st.session_state.n_correct / st.session_state.n_total * 100
+        HISTORY.append({
+            "subject":       st.session_state.subject_idx,
+            "mean_wl":       float(np.mean(list(st.session_state.wl_hist))),
+            "mean_fat":      float(np.mean(list(st.session_state.fatigue_hist))),
+            "accuracy":      acc_final,
+            "focus_minutes": st.session_state.get("streak", FocusStreak()).minutes,
+        })
+
+
 _defaults: dict = {
+    "page":             "home",
     "running":          False,
     "wl_hist":          collections.deque([0.0]*100, maxlen=100),
     "fatigue_hist":     collections.deque([0.0]*100, maxlen=100),
@@ -786,9 +814,9 @@ _defaults: dict = {
     "_labels_data":     None, "_freq_all":    None,
     "_run_complete":    False, "_final_stats": {},
     "_loaded_subject":  -1,
-    # Debug — written by fragment, read by sidebar OUTSIDE the fragment
     "_dbg_cw":          0.0, "_dbg_frame": 0,
     "_dbg_freq_mean":   0.0, "_dbg_freq_std": 0.0,
+    "live_subpage":     "overview",
 }
 for k, v in _defaults.items():
     if k not in st.session_state:
@@ -800,12 +828,6 @@ for k, v in _defaults.items():
 # ══════════════════════════════════════════════════════════════════════════════
 
 def _wl_color(wl: float) -> str:
-    """
-    Workload colour.  High workload = BAD, so palette is inverted vs bandwidth:
-      0–30%  → green  (LOW EFFORT)
-      30–70% → amber  (ACTIVE)
-      70–100%→ red    (HEAVY LOAD)
-    """
     return "#00CC77" if wl < 30 else "#E09000" if wl < 70 else "#E05050"
 
 def _fat_color(fat: float) -> str:
@@ -815,7 +837,6 @@ def _wl_pill_class(wl: float) -> str:
     return "pill-green" if wl < 30 else "pill-orange" if wl < 70 else "pill-red"
 
 def _wl_pill(wl: float) -> str:
-    """Status pill for cognitive workload level."""
     lbl = "LOW EFFORT" if wl < 30 else "ACTIVE" if wl < 70 else "HEAVY LOAD"
     return f'<span class="pill {_wl_pill_class(wl)}">{lbl}</span>'
 
@@ -839,7 +860,7 @@ def _skel_text_block() -> str:
 def make_ring(value: float, color: str, label: str, subtitle: str = "") -> go.Figure:
     """Donut ring gauge. value 0–100."""
     fig = go.Figure()
-    fig.add_trace(go.Pie(values=[100], hole=0.72, marker_colors=["#262B34"],
+    fig.add_trace(go.Pie(values=[100], hole=0.72, marker_colors=["#1E2329"],
                           textinfo="none", hoverinfo="skip", showlegend=False))
     v = max(float(value), 0.5)
     fig.add_trace(go.Pie(values=[v, 100-v], hole=0.72,
@@ -858,15 +879,7 @@ def make_ring(value: float, color: str, label: str, subtitle: str = "") -> go.Fi
 
 
 def make_workload_bar_html(wl: float, gt_str: str = "") -> str:
-    """
-    Horizontal energy bar for the hero cognitive workload metric.
-
-    The bar fills left-to-right as workload increases (opposite of bandwidth).
-    0% (left, "Resting") = brain at rest.
-    100% (right, "Overloaded") = maximum cognitive demand.
-
-    Color uses _wl_color: green → amber → red as load rises.
-    """
+    """Horizontal energy bar for the hero cognitive workload metric."""
     pct   = max(min(wl, 100), 0)
     color = _wl_color(wl)
     grad  = f"linear-gradient(90deg, {color}55 0%, {color} 100%)"
@@ -892,20 +905,15 @@ def make_workload_bar_html(wl: float, gt_str: str = "") -> str:
 
 def make_trend_chart(time_x: list, wl_hist: list,
                      fatigue_hist: list, p_threshold: float) -> go.Figure:
-    """
-    60-second rolling trend: Workload + Fatigue + threshold line.
-    Threshold line drawn at p_threshold × 100 (workload space).
-    High values = heavy load = bad.
-    """
+    """60-second rolling trend: Workload + Fatigue + threshold line."""
     fig = go.Figure()
     fig.add_trace(go.Scatter(
         x=time_x, y=wl_hist, mode="lines", name="Cognitive Workload",
-        line=dict(color="#00B3CC", width=2.2),
-        fill="tozeroy", fillcolor="rgba(0,179,204,0.05)"))
+        line=dict(color="#FFFFFF", width=2.2),
+        fill="tozeroy", fillcolor="rgba(255,255,255,0.04)"))
     fig.add_trace(go.Scatter(
         x=time_x, y=fatigue_hist, mode="lines", name="Fatigue (θ/α)",
         line=dict(color="#A06EDC", width=1.5, dash="dot")))
-    # Threshold in workload space = p_threshold × 100
     fig.add_hline(y=p_threshold * 100.0, line_dash="dash",
                    line_color="rgba(224,144,0,0.4)",
                    annotation_text="CW threshold",
@@ -924,7 +932,7 @@ def make_attention_chart(attn_vals: np.ndarray) -> go.Figure:
     """Bar chart showing which sensor tower the model is relying on most."""
     fig = go.Figure(go.Bar(
         x=["EEG", "Physio", "Spectral"], y=[float(v) for v in attn_vals],
-        marker_color=["#00B3CC", "#E05050", "#A06EDC"],
+        marker_color=["#FFFFFF", "#E05050", "#A06EDC"],
         marker_line_width=0,
         text=[f"{v:.2f}" for v in attn_vals],
         textposition="outside",
@@ -942,7 +950,7 @@ def make_eeg_chart(eeg_ep: np.ndarray) -> go.Figure:
     ds = slice(None, None, 2)
     fig = go.Figure()
     for j,(color,ch) in enumerate(zip(
-            ["#00B3CC","#A06EDC","#00CC77","#E09000"], ["TP9","AF7","AF8","TP10"])):
+            ["#FFFFFF","#A06EDC","#00CC77","#E09000"], ["TP9","AF7","AF8","TP10"])):
         fig.add_trace(go.Scatter(y=eeg_ep[j,ds]*8.0+j*7, mode="lines", name=ch,
                                   line=dict(color=color, width=1.0)))
     fig.update_layout(height=180, margin=dict(l=5,r=5,t=5,b=5),
@@ -980,14 +988,12 @@ def make_history_chart(records: list) -> go.Figure:
         return fig
     recs    = list(reversed(records[:7]))
     labels  = [r.get("ts","")[:10] for r in recs]
-    # Support both legacy "mean_bw" key and new "mean_wl" key
     wl_vals = [r.get("mean_wl", r.get("mean_bw", 0)) for r in recs]
     fig = go.Figure(go.Bar(
         x=labels, y=wl_vals,
         marker_color=[_wl_color(v) for v in wl_vals], marker_line_width=0,
         text=[f"{v:.0f}%" for v in wl_vals], textposition="outside",
         textfont=dict(color="#8B949E", size=10, family="DM Mono")))
-    # Reference line at 70% (heavy-load boundary)
     fig.add_hline(y=70, line_dash="dash", line_color="rgba(224,80,80,0.25)")
     fig.update_layout(height=220, margin=dict(l=5,r=5,t=20,b=5),
                       paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
@@ -998,19 +1004,186 @@ def make_history_chart(records: list) -> go.Figure:
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# 13. SIDEBAR
+# 13. HOME PAGE
+# ══════════════════════════════════════════════════════════════════════════════
+
+def render_home():
+    """Landing page. Sidebar is hidden via CSS while this renders."""
+    # Hide sidebar on home
+    st.markdown("""
+    <style>
+    div[data-testid="stSidebar"],
+    div[data-testid="stSidebarCollapsedControl"] { display: none !important; }
+    </style>
+    """, unsafe_allow_html=True)
+
+    # Hero image
+    st.markdown("""
+    <div style="width:100%;height:340px;border-radius:24px;overflow:hidden;
+                margin-bottom:36px;position:relative">
+      <img src="https://images.unsplash.com/photo-1559757175-5700dde675bc?q=80&w=2000"
+           style="width:100%;height:100%;object-fit:cover;opacity:0.7"/>
+      <div style="position:absolute;inset:0;
+                  background:linear-gradient(to bottom,rgba(10,12,16,0.1) 0%,rgba(10,12,16,0.7) 100%)">
+      </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # Title + summary
+    st.markdown("""
+    <div style="text-align:center;margin-bottom:48px">
+      <h1 style="color:#FFFFFF;font-family:'DM Mono',monospace;font-size:42px;
+                 font-weight:500;letter-spacing:0.05em;margin:0 0 20px 0">
+        Brain Battery — Brain Monitor
+      </h1>
+      <p style="color:#9CA3AF;font-size:16px;font-family:'DM Sans',sans-serif;
+                line-height:1.75;max-width:720px;margin:0 auto">
+        Brain Battery uses advanced subject-agnostic neural networks to transform raw EEG
+        and physiological data into a real-time cognitive workload score. By monitoring
+        mental effort and fatigue, it empowers users to optimize their focus and prevent
+        burnout. Experience the future of neurotechnology through our interactive data
+        demo or by connecting your own Muse headset.
+      </p>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # Choice cards
+    c1, c2 = st.columns(2, gap="large")
+
+    with c1:
+        st.markdown("""
+        <div class="home-card">
+          <div style="font-size:48px;margin-bottom:16px">📼</div>
+          <h2 style="color:#FFFFFF;font-family:'DM Mono',monospace;font-size:20px;
+                     font-weight:500;letter-spacing:0.03em;margin:0 0 12px 0">
+            Pre-recorded Demo
+          </h2>
+          <p style="color:#9CA3AF;font-size:14px;font-family:'DM Sans',sans-serif;
+                    line-height:1.6;margin:0">
+            Replay cognitive workload data from 24 subjects in the UNIVERSE dataset.
+            Watch the model classify mental effort in real time, with ground-truth labels.
+          </p>
+        </div>
+        """, unsafe_allow_html=True)
+        if st.button("Launch Demo", key="home_demo", use_container_width=True, type="primary"):
+            st.session_state.app_mode = "📼 Demo — pre-recorded subjects"
+            st.session_state.page     = "app"
+            st.rerun()
+
+    with c2:
+        st.markdown("""
+        <div class="home-card">
+          <div style="font-size:48px;margin-bottom:16px">🎧</div>
+          <h2 style="color:#FFFFFF;font-family:'DM Mono',monospace;font-size:20px;
+                     font-weight:500;letter-spacing:0.03em;margin:0 0 12px 0">
+            Live Muse Mode
+          </h2>
+          <p style="color:#9CA3AF;font-size:14px;font-family:'DM Sans',sans-serif;
+                    line-height:1.6;margin:0">
+            Connect your Muse headband via BlueMuse for live EEG streaming.
+            The model adapts to your personal cognitive baseline in real time.
+          </p>
+        </div>
+        """, unsafe_allow_html=True)
+        if st.button("Connect Muse", key="home_live", use_container_width=True, type="secondary"):
+            st.session_state.app_mode = "🎧 Live — Muse headband"
+            st.session_state.page     = "app"
+            st.rerun()
+
+    st.markdown("<br>", unsafe_allow_html=True)
+    st.markdown('<div class="bb-divider"></div>', unsafe_allow_html=True)
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    # Info section
+    inf1, inf2, inf3 = st.columns(3, gap="large")
+
+    with inf1:
+        st.markdown("""
+        <div class="bb-card" style="height:100%">
+          <p class="bb-label">How it Works</p>
+          <p class="bb-desc">
+            Raw 4-channel EEG and physiological signals are passed through a
+            subject-agnostic neural network (EEGNet + PhysioCNN + FreqEncoder).
+            An SQI-conditioned attention gate weighs each modality by real-time
+            signal quality, producing a clean 0–100% workload score per 2-second epoch.
+          </p>
+        </div>
+        """, unsafe_allow_html=True)
+
+    with inf2:
+        st.markdown("""
+        <div class="bb-card" style="height:100%">
+          <p class="bb-label">Goal</p>
+          <p class="bb-desc">
+            Demonstrate that spectral EEG features generalize across subjects without
+            individual calibration. Brain Battery is a research prototype built on the
+            UNIVERSE dataset (n=12 LOSO). Not a medical device — results reflect
+            population-level trends, not clinical diagnoses.
+          </p>
+        </div>
+        """, unsafe_allow_html=True)
+
+    with inf3:
+        st.markdown("""
+        <div class="bb-card" style="height:100%">
+          <p class="bb-label">Feedback</p>
+          <p class="bb-desc">
+            Questions, bug reports, or collaboration inquiries are welcome.<br><br>
+            <strong style="color:#D1D5DB">Email:</strong>
+            brandondong999@gmail.com<br><br>
+            <strong style="color:#D1D5DB">Survey:</strong>
+            <a href="https://airtable.com/appeHlM73XGFPtG2E/shrhWUKHei0fypfTw"
+               style="color:#D1D5DB" target="_blank">Feedback form ↗</a>
+          </p>
+        </div>
+        """, unsafe_allow_html=True)
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# 14. PAGE ROUTING
+# ══════════════════════════════════════════════════════════════════════════════
+if st.session_state.page == "home":
+    render_home()
+    st.stop()
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# 15. SIDEBAR  (app page only)
 # NOTE: st.sidebar.* FORBIDDEN inside @st.fragment.
 # Fragment writes debug to st.session_state._dbg_*, sidebar reads here.
 # ══════════════════════════════════════════════════════════════════════════════
 with st.sidebar:
-    st.markdown('<p class="bb-title">⚙ Controls</p>', unsafe_allow_html=True)
-    st.markdown('<div class="bb-divider"></div>', unsafe_allow_html=True)
+    # ── NAVIGATION ───────────────────────────────────────────────────────────
+    st.markdown('<span class="sidebar-section">Navigation</span>', unsafe_allow_html=True)
+    if st.button("🏠 Home", use_container_width=True):
+        _save_session_history()
+        st.session_state.running         = False
+        st.session_state.frame_idx       = 0
+        st.session_state._run_complete   = False
+        st.session_state.muse_connected  = False
+        st.session_state.live_subpage    = "overview"
+        _reset_history()
+        st.session_state.page = "home"
+        st.rerun()
+
+    # ── Back to Dashboard (only visible in Live Setup) ──
+    if (st.session_state.app_mode == "🎧 Live — Muse headband"
+            and st.session_state.get("live_subpage") == "setup"):
+        if st.button("← Back to Dashboard", use_container_width=True, key="nav_back_dash"):
+            st.session_state.live_subpage = "overview"
+            st.rerun()
+
+    st.markdown('<div class="bb-divider" style="margin:10px 0"></div>', unsafe_allow_html=True)
+
+    # ── DEMO SETTINGS ────────────────────────────────────────────────────────
+    st.markdown('<span class="sidebar-section">Demo Settings</span>', unsafe_allow_html=True)
 
     app_mode = st.radio("Input source",
                          ["📼 Demo — pre-recorded subjects", "🎧 Live — Muse headband"],
                          index=["📼 Demo — pre-recorded subjects",
                                 "🎧 Live — Muse headband"].index(st.session_state.app_mode))
     if app_mode != st.session_state.app_mode:
+        _save_session_history()
         st.session_state.app_mode        = app_mode
         st.session_state.running         = False
         st.session_state.muse_connected  = False
@@ -1019,7 +1192,43 @@ with st.sidebar:
         _reset_history()
         st.rerun()
 
-    st.markdown("---")
+    if app_mode == "📼 Demo — pre-recorded subjects":
+        st.markdown('<span class="bb-label">Dataset subject</span>', unsafe_allow_html=True)
+        subj_sel = st.selectbox(
+            "Replay subject",
+            list(range(24)),
+            format_func=lambda x: f"Subject {x + 1}",
+            index=min(st.session_state.subject_idx, 23),
+        )
+        if subj_sel != st.session_state.subject_idx:
+            _save_session_history()
+            st.session_state.subject_idx     = subj_sel
+            st.session_state.frame_idx       = 0
+            st.session_state.running         = False
+            st.session_state._run_complete   = False
+            st.session_state._eeg_data       = None
+            st.session_state._physio_data    = None
+            st.session_state._labels_data    = None
+            st.session_state._freq_all       = None
+            st.session_state._loaded_subject = -1
+            _reset_history()
+            st.rerun()
+        st.caption("Arc: last 200 calm → first 200 high-load epochs")
+
+    st.markdown('<div class="bb-divider" style="margin:10px 0"></div>', unsafe_allow_html=True)
+    st.markdown('<span class="bb-label">Playback</span>', unsafe_allow_html=True)
+    st.session_state.speed     = st.slider("Frame delay (s)", 0.1, 2.0, 0.5, 0.1)
+    st.session_state.ema_alpha = st.slider("Smoothing (α)", 0.1, 1.0, 0.7, 0.05,
+                                            help="display[t] = α·model[t] + (1−α)·display[t−1]")
+    st.session_state.show_gt   = st.checkbox("Show ground truth label", value=True)
+    st.session_state.lite_mode = st.checkbox("Low-bandwidth mode", value=False,
+                                              help="Hides raw waveforms.")
+
+    st.markdown('<div class="bb-divider" style="margin:10px 0"></div>', unsafe_allow_html=True)
+
+    # ── LIVE CONNECTIVITY ────────────────────────────────────────────────────
+    st.markdown('<span class="sidebar-section">Live Connectivity</span>', unsafe_allow_html=True)
+
     st.markdown('<span class="bb-label">👤 User profile</span>', unsafe_allow_html=True)
     existing = list_users()
     options  = (existing or []) + ["➕ New user…"]
@@ -1062,41 +1271,9 @@ with st.sidebar:
         _reset_history()
         st.rerun()
 
-    st.markdown("---")
-    if app_mode == "📼 Demo — pre-recorded subjects":
-        st.markdown('<span class="bb-label">📊 Dataset subject</span>', unsafe_allow_html=True)
-        subj_sel = st.selectbox(
-            "Replay subject",
-            list(range(24)),
-            format_func=lambda x: f"Subject {x + 1}",
-            index=min(st.session_state.subject_idx, 23),
-        )
-        # ── TASK 1 FIX: explicit running=False + _reset_history() before rerun ──
-        if subj_sel != st.session_state.subject_idx:
-            st.session_state.subject_idx     = subj_sel
-            st.session_state.frame_idx       = 0
-            st.session_state.running         = False   # ← explicit: kill live loop
-            st.session_state._eeg_data       = None
-            st.session_state._physio_data    = None
-            st.session_state._labels_data    = None
-            st.session_state._freq_all       = None
-            st.session_state._loaded_subject = -1
-            _reset_history()                           # ← wipes wl_hist, counters
-            st.rerun()
-        st.caption("Arc: last 200 calm → first 200 high-load epochs")
-        st.markdown("---")
-
-    st.markdown('<span class="bb-label">⚙ Playback</span>', unsafe_allow_html=True)
-    st.session_state.speed     = st.slider("Frame delay (s)", 0.1, 2.0, 0.5, 0.1)
-    st.session_state.ema_alpha = st.slider("Smoothing (α)",   0.1, 1.0, 0.7, 0.05,
-                                            help="display[t] = α·model[t] + (1−α)·display[t−1]")
-    st.session_state.show_gt   = st.checkbox("Show ground truth label", value=True)
-    st.session_state.lite_mode = st.checkbox("Low-bandwidth mode", value=False,
-                                              help="Hides raw waveforms.")
-    st.markdown("---")
+    st.markdown('<div class="bb-divider" style="margin:10px 0"></div>', unsafe_allow_html=True)
     st.caption(f"Device: {DEVICE}")
 
-    # Debug — written by fragment, read here (safe: outside fragment)
     if st.session_state.get("_dbg_frame", 0) > 0:
         st.markdown('<span class="bb-label">🔬 Debug</span>', unsafe_allow_html=True)
         st.caption(
@@ -1108,13 +1285,12 @@ with st.sidebar:
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# 14. LOAD MODEL + DATA  (outside fragment — safe to call st.sidebar here)
+# 16. LOAD MODEL + DATA
 # ══════════════════════════════════════════════════════════════════════════════
 model, model_status, model_diag = load_model(PT_PATH)
 
 with st.sidebar:
-    st.markdown("---")
-    st.markdown('<span class="bb-label">🤖 Model status</span>', unsafe_allow_html=True)
+    st.markdown('<span class="sidebar-section">Model Status</span>', unsafe_allow_html=True)
     ds_label = model_diag.get("status", "")
     if "❌" in ds_label: st.error(ds_label)
     elif ds_label:       st.success(ds_label)
@@ -1144,13 +1320,13 @@ if is_demo:
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# 15. STATIC PAGE HEADER
+# 17. STATIC PAGE HEADER
 # ══════════════════════════════════════════════════════════════════════════════
 hc1, hc2 = st.columns([3, 1])
 with hc1:
     st.markdown(
-        '<h1 style="margin:0;font-size:26px;color:#00B3CC;'
-        'font-family:\'DM Mono\',monospace">🧠 Brain Battery</h1>',
+        '<h1 style="margin:0;font-size:26px;color:#FFFFFF;'
+        'font-family:\'DM Mono\',monospace;letter-spacing:0.05em">🧠 Brain Battery</h1>',
         unsafe_allow_html=True)
     st.markdown(
         '<p style="color:#4B5563;font-size:13px;margin-top:2px">'
@@ -1163,7 +1339,7 @@ with hc2:
         st.markdown(
             f'<div style="text-align:right;margin-top:8px">'
             f'<span class="pill pill-dim">Subject {st.session_state.subject_idx+1}</span>&nbsp;'
-            f'<span class="pill pill-blue">{n_lo}↓ {n_hi}↑</span></div>',
+            f'<span class="pill pill-white">{n_lo}↓ {n_hi}↑</span></div>',
             unsafe_allow_html=True)
 
 st.markdown("""
@@ -1189,7 +1365,7 @@ st.markdown('<div class="bb-divider"></div>', unsafe_allow_html=True)
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# 16. LIVE MODE GATE
+# 18. LIVE MODE GATE
 # ══════════════════════════════════════════════════════════════════════════════
 if st.session_state.app_mode == "🎧 Live — Muse headband":
     if not PYLSL_AVAILABLE:
@@ -1201,42 +1377,74 @@ if st.session_state.app_mode == "🎧 Live — Muse headband":
           <p style="color:#6B7280;font-size:13px;margin-bottom:16px">
             Streamlit is using a different Python than where pylsl is installed.</p>
           <code style="background:#0A0C10;padding:10px 18px;border-radius:8px;
-                       color:#00B3CC;font-family:'DM Mono',monospace;font-size:13px">
+                       color:#FFFFFF;font-family:'DM Mono',monospace;font-size:13px">
             python -m streamlit run dashboard.py</code>
         </div>""", unsafe_allow_html=True)
         st.stop()
 
-    if not st.session_state.muse_connected:
+    # ── SETUP SUBPAGE ────────────────────────────────────────────────────
+    if st.session_state.live_subpage == "setup":
         st.markdown("""
         <div class="conn-card">
-          <div style="font-size:52px;margin-bottom:14px">🎧</div>
-          <h3 style="color:#00B3CC;margin:0 0 8px 0;font-family:'DM Mono',monospace">
-            Waiting for Muse Headband</h3>
-          <p style="color:#6B7280;font-size:13px;white-space:pre-line;margin-bottom:20px">
-1. Put on the Muse headband
-2. Open BlueMuse → Start Streaming
-3. Click Connect below</p>
+          <div style="font-size:52px;margin-bottom:8px">🎧</div>
+          <h3 style="color:#FFFFFF;margin:0 0 4px 0;font-family:'DM Mono',monospace;
+                     letter-spacing:0.04em">Muse Headset Setup</h3>
+          <p style="color:#8B949E;font-size:13px;margin:0 0 22px 0">
+            Connect your Muse headband to stream 4-channel EEG in real time.</p>
+          <svg width="200" height="90" viewBox="0 0 200 90"
+               style="margin:4px auto 22px auto;display:block">
+            <ellipse cx="100" cy="48" rx="78" ry="30" fill="none"
+                     stroke="rgba(255,255,255,0.28)" stroke-width="2"/>
+            <circle cx="40"  cy="48" r="6" fill="#FFFFFF"/>
+            <circle cx="82"  cy="30" r="5" fill="#FFFFFF"/>
+            <circle cx="118" cy="30" r="5" fill="#FFFFFF"/>
+            <circle cx="160" cy="48" r="6" fill="#FFFFFF"/>
+            <text x="100" y="82" text-anchor="middle"
+                  fill="rgba(255,255,255,0.4)" font-family="DM Mono" font-size="10">
+              TP9 · AF7 · AF8 · TP10</text>
+          </svg>
+          <div style="text-align:left;color:#D1D5DB;font-size:13px;line-height:2;
+                      font-family:'DM Sans',sans-serif;margin:0 auto 24px auto;max-width:360px">
+            <div><strong style="color:#FFFFFF">1.</strong> &nbsp;Put on the Muse headband.</div>
+            <div><strong style="color:#FFFFFF">2.</strong> &nbsp;Open BlueMuse → Start Streaming.</div>
+            <div><strong style="color:#FFFFFF">3.</strong> &nbsp;Click 🔌 Connect below.</div>
+          </div>
         </div>""", unsafe_allow_html=True)
-        col_btn = st.columns([2,1,2])[1]
+
+        col_btn = st.columns([2, 1, 2])[1]
         with col_btn:
-            if st.button("🔌 Connect", type="primary", use_container_width=True):
+            if st.button("🔌 Connect", type="primary",
+                         use_container_width=True, key="muse_connect_setup"):
                 streamer = MuseStreamer()
                 ok, msg  = streamer.connect(timeout=5.0)
                 if ok:
                     st.session_state.muse_streamer  = streamer
                     st.session_state.muse_connected = True
+                    st.session_state.live_subpage   = "overview"
                     st.success(msg); st.rerun()
                 else:
                     st.error(msg)
         st.stop()
-    else:
+
+    # ── OVERVIEW SUBPAGE ─────────────────────────────────────────────────
+    stp_l, stp_c, stp_r = st.columns([3, 2, 3])
+    with stp_c:
+        setup_btn_type = "secondary" if st.session_state.muse_connected else "primary"
+        if st.button("🎧 Setup Muse Headset", type=setup_btn_type,
+                     use_container_width=True, key="live_goto_setup"):
+            st.session_state.live_subpage = "setup"
+            st.rerun()
+
+    if st.session_state.muse_connected:
         stable = st.session_state.get("signal_stable", True)
         reason = st.session_state.get("signal_reason", "OK")
         st.success("🎧 Muse connected — signal stable") if stable else st.warning(f"⚠️ {reason}")
+    else:
+        st.info("🔌 Muse not connected — click **Setup Muse Headset** to begin streaming.")
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# 17. HISTORY TAB
+# 19. HISTORY TAB
 # ══════════════════════════════════════════════════════════════════════════════
 if st.session_state.active_tab == "📂 History":
     records = HISTORY.load_recent(20)
@@ -1274,7 +1482,7 @@ if st.session_state.active_tab == "📂 History":
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# 18. SUMMARY TAB
+# 20. SUMMARY TAB
 # ══════════════════════════════════════════════════════════════════════════════
 if st.session_state.active_tab == "🏠 Summary":
     records = HISTORY.load_recent(10)
@@ -1324,26 +1532,28 @@ Jaw clench → spectral weight drops → model automatically down-weights EEG.
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# 19. LIVE FRAGMENT  — Vertical Health Feed
+# 21. LIVE FRAGMENT  — Vertical Health Feed
 # ──────────────────────────────────────────────────────────────────────────────
 # CRITICAL RULES (all retained from v4.1)
 # 1. ZERO st.sidebar.* calls anywhere in this function.
 # 2. ALL layout scaffolding declared UNCONDITIONALLY at the top.
 # 3. Skeleton loaders fill all placeholders before inference starts.
 #
-# STATE MACHINE (v4.2 fix)
+# STATE MACHINE (v5.0)
 # ─────────────────────────
-#   [IDLE] ──Start──▶ [RUNNING] ──End──▶ [COMPLETE]
-#                          ▲                  │
-#                          └──Restart──────────┘
+#   [IDLE] ──▶ Start ──▶ [RUNNING] ──end of data──▶ [COMPLETE]
+#                             ▲                           │
+#                             └──── ↺ Restart Run ────────┘
 #
-# "↺ Restart Run" button: resets all deques, frame_idx, _run_complete,
-# sets running=True, calls st.rerun() IMMEDIATELY (no fall-through).
+# Single dynamic button:
+#   _run_complete=False, running=False → "▶ Start"
+#   _run_complete=True                 → "↺ Restart Run"
 #
-# The loop driver at the bottom calls st.rerun() whenever running=True,
-# regardless of whether data was acquired this tick — this prevents the
-# fragment from silently dying after a subject switch or any other
-# state transition that sets running=True without an explicit rerun.
+# Frame-freeze pattern: when data is exhausted, running is set to False and
+# _run_complete=True, but the render block is NOT gated on running. The
+# fragment continues to display the last computed values from session_state.
+# The `return` was intentionally removed from the completion branch to allow
+# this persistent render. See Troubleshooting.md for rationale.
 # ══════════════════════════════════════════════════════════════════════════════
 
 @st.fragment
@@ -1364,7 +1574,7 @@ def live_display():
         st.warning("⏳ Model not loaded — check sidebar diagnostics."); return
     frag_model.eval()
 
-    # ── Run-complete summary (top of layout, above all rows) ──────────────
+    # ── Run-complete summary ──────────────────────────────────────────────
     if st.session_state._run_complete:
         fs       = st.session_state._final_stats
         acc_f    = fs.get("accuracy",      0.0)
@@ -1383,26 +1593,26 @@ def live_display():
 
         st.markdown(f"""
         <div class="bb-card-accent" style="margin-bottom:14px">
-          <h2 style="color:#00B3CC;margin-top:0;font-family:'DM Mono',monospace">
+          <h2 style="color:#FFFFFF;margin-top:0;font-family:'DM Mono',monospace">
             ✅ Run Complete — Subject {subj_num}</h2>
           <table class="metric-table">
-            <tr style="border-bottom:1px solid #1A1D24">
+            <tr style="border-bottom:1px solid rgba(255,255,255,0.06)">
               <td style="padding:7px 0;color:#4B5563;font-size:10px;text-transform:uppercase;
                          letter-spacing:0.1em">Windows analysed</td>
               <td style="color:#E5E7EB"><b>{n_tot}</b>
                 <span style="color:#4B5563;font-size:10px"> × 2 s</span></td></tr>
-            <tr style="border-bottom:1px solid #1A1D24">
+            <tr style="border-bottom:1px solid rgba(255,255,255,0.06)">
               <td style="padding:7px 0;color:#4B5563;font-size:10px;text-transform:uppercase;
                          letter-spacing:0.1em">Classification accuracy</td>
               <td style="color:{acc_col}"><b>{acc_f:.1f}%</b>
                 <span style="color:#4B5563;font-size:10px">
                   &nbsp;({n_cor}/{n_tot} correct — chance 50%)</span></td></tr>
-            <tr style="border-bottom:1px solid #1A1D24">
+            <tr style="border-bottom:1px solid rgba(255,255,255,0.06)">
               <td style="padding:7px 0;color:#4B5563;font-size:10px;text-transform:uppercase;
                          letter-spacing:0.1em">Average workload</td>
-              <td style="color:#00B3CC"><b>{mean_wl:.1f}%</b>
+              <td style="color:#FFFFFF"><b>{mean_wl:.1f}%</b>
                 <span style="color:#4B5563;font-size:10px"> → {wl_str}</span></td></tr>
-            <tr style="border-bottom:1px solid #1A1D24">
+            <tr style="border-bottom:1px solid rgba(255,255,255,0.06)">
               <td style="padding:7px 0;color:#4B5563;font-size:10px;text-transform:uppercase;
                          letter-spacing:0.1em">Average fatigue (θ/α)</td>
               <td style="color:#A06EDC"><b>{mean_fat:.1f}/100</b>
@@ -1417,21 +1627,17 @@ def live_display():
         </div>""", unsafe_allow_html=True)
 
     # ══════════════════════════════════════════════════════════════════════
-    # LAYOUT SCAFFOLD — UNCONDITIONAL, before all state checks.
-    # DO NOT MOVE OR CONDITIONALISE ANY OF THESE DECLARATIONS.
+    # LAYOUT SCAFFOLD — UNCONDITIONAL
     # ══════════════════════════════════════════════════════════════════════
 
-    # ── Row 1: Cognitive Workload (hero) ───────────────────────────────────
     r1l, r1r = st.columns([2, 1])
     with r1l:
         ph_hero = st.empty()
     with r1r:
+        st.markdown('<p class="feed-section-title">Cognitive Workload</p>',
+                    unsafe_allow_html=True)
         st.markdown(
-            '<p class="feed-section-title">Cognitive Workload</p>',
-            unsafe_allow_html=True)
-        st.markdown(
-            '<p class="bb-desc">'
-            '0% = fully rested. 100% = brain maxed out. '
+            '<p class="bb-desc">0% = fully rested. 100% = brain maxed out. '
             'Measures how much mental effort your current task is demanding.</p>',
             unsafe_allow_html=True)
         with st.popover("🔬 Technical Details"):
@@ -1452,14 +1658,12 @@ Threshold fixed at 0.5 in Demo mode; personalized via Welford algorithm in Live 
 
     st.markdown('<div class="bb-divider" style="margin:6px 0"></div>', unsafe_allow_html=True)
 
-    # ── Row 2: Mental Fatigue ──────────────────────────────────────────────
     r2l, r2r = st.columns([1, 2])
     with r2l:
         ph_fatigue = st.empty()
     with r2r:
-        st.markdown(
-            '<p class="feed-section-title">Mental Fatigue</p>',
-            unsafe_allow_html=True)
+        st.markdown('<p class="feed-section-title">Mental Fatigue</p>',
+                    unsafe_allow_html=True)
         st.markdown(
             '<p class="bb-desc">A direct brainwave measure of tiredness — no AI involved. '
             'As you tire, slow theta waves rise and alert alpha waves fall.</p>',
@@ -1481,14 +1685,12 @@ Computed per-epoch from the raw EEG PSD, not from the model.
 
     st.markdown('<div class="bb-divider" style="margin:6px 0"></div>', unsafe_allow_html=True)
 
-    # ── Row 3: Focus Streak ────────────────────────────────────────────────
     r3l, r3r = st.columns([1, 2])
     with r3l:
         ph_streak = st.empty()
     with r3r:
-        st.markdown(
-            '<p class="feed-section-title">Focus Streak</p>',
-            unsafe_allow_html=True)
+        st.markdown('<p class="feed-section-title">Focus Streak</p>',
+                    unsafe_allow_html=True)
         st.markdown(
             '<p class="bb-desc">Tracks how long you\'ve stayed below the cognitive load '
             'threshold. A 3-window grace period keeps single noisy frames from '
@@ -1498,14 +1700,12 @@ Computed per-epoch from the raw EEG PSD, not from the model.
 
     st.markdown('<div class="bb-divider" style="margin:6px 0"></div>', unsafe_allow_html=True)
 
-    # ── Row 4: Signal Quality & Weights ───────────────────────────────────
     r4l, r4r = st.columns([1, 2])
     with r4l:
         ph_attn = st.empty()
     with r4r:
-        st.markdown(
-            '<p class="feed-section-title">Signal Quality & Weights</p>',
-            unsafe_allow_html=True)
+        st.markdown('<p class="feed-section-title">Signal Quality & Weights</p>',
+                    unsafe_allow_html=True)
         st.markdown(
             '<p class="bb-desc">Shows which sensor the AI is relying on most. '
             'Spectral (frequency-band) features consistently generalize best '
@@ -1533,17 +1733,14 @@ lowest cross-subject variance of the three towers.
 
     st.markdown('<div class="bb-divider" style="margin:6px 0"></div>', unsafe_allow_html=True)
 
-    # ── Row 5: Trend (full width) ──────────────────────────────────────────
     st.markdown('<span class="bb-label">60-second workload &amp; fatigue trend</span>',
                 unsafe_allow_html=True)
     ph_trend = st.empty()
 
     st.markdown('<div class="bb-divider" style="margin:6px 0"></div>', unsafe_allow_html=True)
 
-    # ── Row 6: Classification accuracy ────────────────────────────────────
     ph_acc = st.empty()
 
-    # ── Row 7: Raw sensor data (collapsed) ────────────────────────────────
     if not lite_mode:
         with st.expander("📡 Raw sensor data", expanded=False):
             wd1, wd2 = st.columns(2)
@@ -1559,8 +1756,7 @@ lowest cross-subject variance of the three towers.
         ph_eeg = ph_physio = None
 
     # ══════════════════════════════════════════════════════════════════════
-    # SKELETON LOADERS — fill all placeholders now.
-    # DO NOT REMOVE OR CONDITIONALISE THESE.
+    # SKELETON LOADERS
     # ══════════════════════════════════════════════════════════════════════
     ph_hero.markdown(
         f'<div style="min-height:110px">{_skel_bar(110)}</div>',
@@ -1627,38 +1823,27 @@ lowest cross-subject variance of the three towers.
             </div>""", unsafe_allow_html=True)
 
     # ══════════════════════════════════════════════════════════════════════
-    # TASK 1 FIX — Control buttons with corrected restart state machine.
-    #
-    # "↺ Restart Run" resets ALL state, then calls st.rerun() immediately.
-    # This guarantees the fragment re-enters its loop with a clean slate —
-    # no fall-through, no stale acquire_data flag, no dead loop.
+    # UNIFIED SINGLE DYNAMIC BUTTON
     # ══════════════════════════════════════════════════════════════════════
-    b1, b2, _ = st.columns([1, 1, 5])
-
-    with b1:
+    btn_col, _ = st.columns([1, 6])
+    with btn_col:
         if st.session_state._run_complete:
-            if st.button("↺ Restart Run", type="primary"):
-                # Full state reset — mirrors _reset_history() plus frame/run flags
+            if st.button("↺ Restart Run", type="primary", use_container_width=True):
                 st.session_state.frame_idx     = 0
                 st.session_state._run_complete = False
                 st.session_state._final_stats  = {}
                 st.session_state.running       = True
-                _reset_history()   # wipes wl_hist, fatigue_hist, counters, streak
-                st.rerun()         # ← MUST be here; do not rely on fall-through
+                _reset_history()
+                st.rerun()
         else:
             if st.button("▶ Start",
                          disabled=st.session_state.running,
-                         type="primary"):
+                         type="primary",
+                         use_container_width=True):
                 st.session_state.running = True
                 st.rerun()
 
-    with b2:
-        if st.button("⏸ Pause" if st.session_state.running else "▶ Resume"):
-            st.session_state.running = not st.session_state.running
-            st.rerun()
-
-    # ── Initialise render variables with frozen-frame fallbacks ──────────
-    # These are overwritten below if acquisition runs this tick.
+    # ── Render variable defaults (frozen-frame fallbacks) ─────────────────
     smoothed_wl  = float(st.session_state.wl_hist[-1])
     smoothed_fat = float(st.session_state.fatigue_hist[-1])
     wl_color     = _wl_color(smoothed_wl)
@@ -1671,7 +1856,6 @@ lowest cross-subject variance of the three towers.
     eeg_ep       = np.zeros((4, 512), dtype=np.float32)
     physio_ep    = np.zeros((3, 512), dtype=np.float32)
 
-    # ── Decide whether to run inference this tick ─────────────────────────
     should_run = (
         st.session_state.running
         and not st.session_state._run_complete
@@ -1683,7 +1867,8 @@ lowest cross-subject variance of the three towers.
         if frag_demo:
             i = st.session_state.frame_idx
             if i >= len(f_labels):
-                # ── Dataset exhausted — commit stats and mark complete ────
+                # Dataset exhausted — commit stats, freeze frame, do NOT return.
+                # The render block below will display the final frame values.
                 acc_final = (st.session_state.n_correct / st.session_state.n_total * 100
                              if st.session_state.n_total > 0 else 0.0)
                 st.session_state._final_stats = {
@@ -1704,8 +1889,8 @@ lowest cross-subject variance of the three towers.
                     "accuracy":      acc_final,
                     "focus_minutes": streak.minutes,
                 })
-                # Fall through to RENDER using frozen last-frame values
                 should_run = False
+                # Fall through to render — frozen last-frame values displayed.
             else:
                 eeg_ep     = f_eeg[i]
                 physio_ep  = f_physio[i]
@@ -1718,7 +1903,7 @@ lowest cross-subject variance of the three towers.
             if raw_ep is None:
                 ph_hero.markdown(
                     '<div class="bb-card" style="text-align:center;padding:40px;min-height:110px">'
-                    '<span class="pill pill-blue">⏳ Buffering Muse (~4 s)</span></div>',
+                    '<span class="pill pill-white">⏳ Buffering Muse (~4 s)</span></div>',
                     unsafe_allow_html=True)
                 time.sleep(0.5); st.rerun(); return
 
@@ -1752,12 +1937,10 @@ lowest cross-subject variance of the three towers.
                 np.zeros(3, dtype=np.float32)])
 
     if should_run:
-        # ── Mental Fatigue (Klimesch 1999) — spectral, no model ──────────
         theta_log      = float(np.mean(freq_vec[4:8]))
         alpha_log      = float(np.mean(freq_vec[8:12]))
         fatigue_scaled = float(np.clip((theta_log - alpha_log + 1.5) * 40, 0, 100))
 
-        # ── CW Inference ──────────────────────────────────────────────────
         with torch.inference_mode():
             logits, attn_t = frag_model(
                 torch.from_numpy(eeg_ep[None,None,:,:]).float().to(DEVICE),
@@ -1768,13 +1951,11 @@ lowest cross-subject variance of the three towers.
         attn_vals  = attn_t[0].cpu().numpy()
         attn_vals /= np.sum(attn_vals) + 1e-8
 
-        # ── Write debug to session_state (sidebar reads outside fragment) ─
         st.session_state._dbg_cw        = cw_prob
         st.session_state._dbg_frame     = st.session_state.frame_idx
         st.session_state._dbg_freq_mean = float(freq_vec.mean())
         st.session_state._dbg_freq_std  = float(freq_vec.std())
 
-        # ── Personalization (Live only) ────────────────────────────────────
         if not frag_demo:
             st.session_state.profile  = update_profile(st.session_state.profile, cw_prob)
             st.session_state.fss     += 1
@@ -1784,9 +1965,6 @@ lowest cross-subject variance of the three towers.
 
         profile = st.session_state.profile
 
-        # ── Workload + threshold ───────────────────────────────────────────
-        # Demo: Workload = 100 × P(high CW)  (0% rested, 100% maxed out)
-        # Live: personalised normalisation over user's personal CW range
         if frag_demo:
             workload    = cw_prob * 100.0
             p_threshold = 0.5
@@ -1799,11 +1977,9 @@ lowest cross-subject variance of the three towers.
             st.session_state.n_total   += 1
             st.session_state.n_correct += int(pred == true_label)
 
-        # ── Focus streak update ────────────────────────────────────────────
         streak.update(cw_prob < p_threshold)
         st.session_state.streak = streak
 
-        # ── EMA smoothing ──────────────────────────────────────────────────
         prev_wl      = st.session_state.wl_hist[-1]
         smoothed_wl  = float(np.clip(prev_wl  + ema_alpha*(workload       - prev_wl),  0, 100))
         prev_fat     = st.session_state.fatigue_hist[-1]
@@ -1820,22 +1996,18 @@ lowest cross-subject variance of the three towers.
         if frag_demo:
             st.session_state.frame_idx += 1
 
-    # Re-read streak (needed for frozen render path after run-complete)
     streak = st.session_state.get("streak", FocusStreak())
 
     # ════════════════════════════════════════════════════════════════════
-    # RENDER — always executes.
-    # Uses live values when should_run=True, frozen values otherwise.
+    # RENDER — always executes (frozen values when not running).
     # ════════════════════════════════════════════════════════════════════
 
-    # Row 1: Workload hero bar
     gt_str = ""
     if frag_demo and show_gt and not st.session_state._run_complete:
         gt_str = "GT: Hi-load" if true_label else "GT: Calm"
     ph_hero.markdown(make_workload_bar_html(smoothed_wl, gt_str), unsafe_allow_html=True)
     ph_wl_pill.markdown(_wl_pill(smoothed_wl), unsafe_allow_html=True)
 
-    # Row 2: Fatigue ring
     fat_lbl = "ALERT" if smoothed_fat<35 else "TIRED" if smoothed_fat<65 else "FATIGUED"
     ph_fatigue.plotly_chart(
         make_ring(smoothed_fat, fat_color, fat_lbl, "θ/α ratio"),
@@ -1846,7 +2018,6 @@ lowest cross-subject variance of the three towers.
         f'<span class="bb-sub" style="margin-left:8px">{smoothed_fat:.0f}/100</span>',
         unsafe_allow_html=True)
 
-    # Row 3: Focus streak
     streak_col    = "#00CC77" if streak.seconds > 0 else "#4B5563"
     streak_status = "FOCUSING" if streak.seconds > 0 else "RESET"
     streak_pcls   = "pill-green" if streak.seconds > 0 else "pill-dim"
@@ -1862,7 +2033,6 @@ lowest cross-subject variance of the three towers.
         f'<span class="bb-sub" style="margin-left:8px">{streak.minutes:.1f} min this session</span>',
         unsafe_allow_html=True)
 
-    # Row 4: Attention bar + signal quality
     ph_attn.plotly_chart(
         make_attention_chart(attn_vals),
         use_container_width=True, key="attn")
@@ -1889,17 +2059,14 @@ lowest cross-subject variance of the three towers.
             f'<span class="bb-sub" style="margin-left:8px">{reason}</span>',
             unsafe_allow_html=True)
 
-    # Row 5: Trend chart
     ph_trend.plotly_chart(
         make_trend_chart(list(st.session_state.time_hist),
                          list(st.session_state.wl_hist),
                          list(st.session_state.fatigue_hist), p_threshold),
         use_container_width=True, key="trend")
 
-    # Row 6: Accuracy
     _render_accuracy()
 
-    # Row 7: Raw waveforms
     if ph_eeg is not None:
         ph_eeg.plotly_chart(make_eeg_chart(eeg_ep),
                              use_container_width=True, key="eeg")
@@ -1914,12 +2081,7 @@ lowest cross-subject variance of the three towers.
                 unsafe_allow_html=True)
 
     # ══════════════════════════════════════════════════════════════════════
-    # LOOP DRIVER
-    # ─────────────────────────────────────────────────────────────────────
-    # Call st.rerun() whenever running=True, even if no inference happened
-    # this tick (e.g. first tick after a subject switch or restart where
-    # should_run was temporarily False). This prevents the fragment from
-    # going idle when it should be looping.
+    # LOOP DRIVER — rerun while running, idle when complete.
     # ══════════════════════════════════════════════════════════════════════
     if st.session_state.running:
         time.sleep(speed)
