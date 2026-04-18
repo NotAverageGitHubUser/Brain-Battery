@@ -119,12 +119,40 @@ st.markdown("""
 
 *, *::before, *::after { box-sizing: border-box; }
 html { overflow-anchor: none; }
-.stApp { background: #0A0C10; font-family: 'DM Sans', sans-serif; }
+.stApp {
+    background: #0A0C10;
+    background-image:
+        radial-gradient(ellipse 80% 60% at 20% 10%, rgba(0,204,119,0.04) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 50% at 80% 90%, rgba(160,110,220,0.05) 0%, transparent 55%);
+    font-family: 'DM Sans', sans-serif;
+}
 .block-container { padding: 1.2rem 2rem 3rem 2rem !important; max-width: 1100px; }
 
+/* ── Force dark mode globally ── */
+html, body, [data-theme], [class*="st-"] {
+    color-scheme: dark !important;
+}
+:root {
+    --background-color: #0A0C10 !important;
+    --secondary-background-color: #0D0F14 !important;
+    --text-color: #E5E7EB !important;
+}
+
+/* ── Sidebar glass ── */
 div[data-testid="stSidebar"] {
-    background: #0D0F14 !important;
-    border-right: 1px solid rgba(255,255,255,0.06);
+    background: rgba(10, 12, 18, 0.82) !important;
+    backdrop-filter: blur(24px) !important;
+    -webkit-backdrop-filter: blur(24px) !important;
+    border-right: 1px solid rgba(255,255,255,0.07) !important;
+    box-shadow: 4px 0 32px rgba(0,0,0,0.5) !important;
+}
+div[data-testid="stSidebar"] > div:first-child {
+    background: transparent !important;
+}
+/* Sidebar inner scroll container */
+div[data-testid="stSidebarContent"] {
+    background: transparent !important;
+    padding-top: 0 !important;
 }
 
 h1, h2, h3 { font-family: 'DM Mono', monospace !important; }
@@ -137,47 +165,56 @@ div[data-testid="stMetricValue"] {
 /* ── Glassmorphism Cards ── */
 .bb-card {
     background: rgba(30, 35, 41, 0.6);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
     border-radius: 24px;
     padding: 20px 22px;
-    margin-bottom: 10px;
+    margin-bottom: 16px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.3), 0 1px 0 rgba(255,255,255,0.04) inset;
 }
 .bb-card-hero {
-    background: rgba(30, 35, 41, 0.6);
+    background: rgba(30, 35, 41, 0.7);
     border: 1px solid rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    border-top: 1px solid rgba(255, 255, 255, 0.22);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
     border-radius: 24px;
-    padding: 22px 24px;
-    margin-bottom: 10px;
+    padding: 24px 26px;
+    margin-bottom: 16px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4), 0 1px 0 rgba(255,255,255,0.06) inset;
 }
 .bb-card-accent {
-    background: rgba(20, 30, 25, 0.7);
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    background: rgba(20, 30, 25, 0.75);
+    border: 1px solid rgba(0, 204, 119, 0.2);
+    border-left: 3px solid rgba(0, 204, 119, 0.5);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
     border-radius: 24px;
     padding: 20px 22px;
-    margin-bottom: 10px;
+    margin-bottom: 16px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.3);
 }
 /* Home page glass choice cards */
 .home-card {
-    background: rgba(30, 35, 41, 0.6);
+    background: rgba(30, 35, 41, 0.55);
     border: 1px solid rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
     border-radius: 24px;
     padding: 40px 32px;
     text-align: center;
     cursor: pointer;
-    transition: border-color 0.2s, background 0.2s;
+    transition: border-color 0.25s ease, background 0.25s ease,
+                transform 0.25s ease, box-shadow 0.25s ease;
     height: 100%;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.3);
 }
 .home-card:hover {
-    border-color: rgba(255,255,255,0.3);
+    border-color: rgba(255,255,255,0.25);
     background: rgba(40, 46, 55, 0.75);
+    transform: translateY(-3px);
+    box-shadow: 0 12px 40px rgba(0,0,0,0.45);
 }
 .bb-divider { height: 1px; background: rgba(255,255,255,0.06); margin: 8px 0; }
 
@@ -198,8 +235,8 @@ div[data-testid="stMetricValue"] {
     font-family: 'DM Mono', monospace;
     line-height: 1;
 }
-.bb-sub   { color: #8B949E; font-size: 12px; font-family: 'DM Sans', sans-serif; }
-.bb-desc  { color: #8B949E; font-size: 13px; font-family: 'DM Sans', sans-serif; line-height: 1.6; }
+.bb-sub   { color: #9CA3AF; font-size: 12px; font-family: 'DM Sans', sans-serif; }
+.bb-desc  { color: #9CA3AF; font-size: 13px; font-family: 'DM Sans', sans-serif; line-height: 1.7; }
 .bb-title { font-family: 'DM Mono', monospace; color: #FFFFFF;
             font-size: 22px; font-weight: 500; letter-spacing: 0.05em; margin: 0; }
 
@@ -226,21 +263,26 @@ div[data-testid="stMetricValue"] {
     font-family: 'DM Mono', monospace;
     letter-spacing: 0.04em; white-space: nowrap;
 }
-.pill-green  { background: rgba(0,200,100,0.08);  color: #00CC77; border: 1px solid rgba(0,200,100,0.2); }
-.pill-orange { background: rgba(240,140,0,0.08);  color: #E09000; border: 1px solid rgba(240,140,0,0.2); }
-.pill-red    { background: rgba(220,60,60,0.08);  color: #E05050; border: 1px solid rgba(220,60,60,0.2); }
+.pill-green  { background: rgba(0,204,119,0.1);   color: #00CC77; border: 1px solid rgba(0,204,119,0.25);
+               box-shadow: 0 0 8px rgba(0,204,119,0.2); }
+.pill-orange { background: rgba(240,140,0,0.1);   color: #E09000; border: 1px solid rgba(240,140,0,0.25);
+               box-shadow: 0 0 8px rgba(240,140,0,0.2); }
+.pill-red    { background: rgba(220,60,60,0.1);   color: #E05050; border: 1px solid rgba(220,60,60,0.25);
+               box-shadow: 0 0 8px rgba(220,60,60,0.2); }
 .pill-white  { background: rgba(255,255,255,0.06); color: #FFFFFF; border: 1px solid rgba(255,255,255,0.15); }
-.pill-purple { background: rgba(160,110,220,0.08);color: #A06EDC; border: 1px solid rgba(160,110,220,0.2); }
-.pill-dim    { background: rgba(107,114,128,0.08);color: #6B7280; border: 1px solid rgba(107,114,128,0.2); }
+.pill-purple { background: rgba(160,110,220,0.1); color: #A06EDC; border: 1px solid rgba(160,110,220,0.25);
+               box-shadow: 0 0 8px rgba(160,110,220,0.2); }
+.pill-dim    { background: rgba(107,114,128,0.08); color: #6B7280; border: 1px solid rgba(107,114,128,0.2); }
 
 /* ── Energy bar (workload — fills as load rises) ── */
 .energy-bar-wrap {
-    background: rgba(38,43,52,0.8);
+    background: rgba(20, 23, 30, 0.9);
     border-radius: 100px;
-    height: 12px;
+    height: 10px;
     width: 100%;
     overflow: hidden;
-    margin: 10px 0 6px 0;
+    margin: 12px 0 8px 0;
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.5);
 }
 .energy-bar-fill {
     height: 100%;
@@ -300,19 +342,22 @@ div[data-testid="column"]        { padding: 0 5px !important; }
 
 /* ── Research banner ── */
 .research-banner {
-    background: linear-gradient(90deg, rgba(255,255,255,0.03) 0%, transparent 100%);
-    border-left: 2px solid rgba(255,255,255,0.2);
-    padding: 10px 16px;
-    border-radius: 0 8px 8px 0;
-    margin-bottom: 14px;
+    background: rgba(0,204,119,0.03);
+    border-left: 2px solid rgba(0,204,119,0.3);
+    padding: 12px 18px;
+    border-radius: 0 12px 12px 0;
+    margin-bottom: 16px;
 }
 
 /* ── History table ── */
 .hist-row {
     display: flex; align-items: center;
-    padding: 9px 14px; border-bottom: 1px solid rgba(255,255,255,0.05);
+    padding: 10px 14px; border-bottom: 1px solid rgba(255,255,255,0.05);
     gap: 12px; font-size: 12px;
+    transition: background 0.15s ease;
+    border-radius: 8px;
 }
+.hist-row:hover { background: rgba(255,255,255,0.03); }
 .hist-row:last-child { border-bottom: none; }
 .hist-ts { color: #4B5563; font-family: 'DM Mono', monospace; font-size: 10px; min-width: 130px; }
 
@@ -324,17 +369,246 @@ div[data-testid="column"]        { padding: 0 5px !important; }
     border-collapse: collapse;
 }
 .metric-table td { padding: 4px 0; }
-
-/* ── Sidebar section labels ── */
-.sidebar-section {
-    color: #D1D5DB;
-    font-size: 9px;
+.metric-table-label {
+    padding: 7px 0;
+    color: #4B5563;
+    font-size: 10px;
     text-transform: uppercase;
-    letter-spacing: 0.14em;
+    letter-spacing: 0.1em;
+    width: 45%;
+}
+.metric-table-value {
+    color: #E5E7EB;
     font-family: 'DM Mono', monospace;
-    margin: 14px 0 6px 0;
+    font-size: 14px;
+}
+
+/* ── Tab buttons ── */
+[data-testid="stBaseButton-primary"] {
+    background: rgba(0,204,119,0.12) !important;
+    color: #00CC77 !important;
+    border: 1px solid rgba(0,204,119,0.3) !important;
+    border-radius: 12px !important;
+    font-family: 'DM Mono', monospace !important;
+    font-size: 12px !important;
+    letter-spacing: 0.04em !important;
+    box-shadow: 0 0 12px rgba(0,204,119,0.15) !important;
+}
+[data-testid="stBaseButton-secondary"] {
+    background: rgba(30,35,41,0.5) !important;
+    color: #6B7280 !important;
+    border: 1px solid rgba(255,255,255,0.07) !important;
+    border-radius: 12px !important;
+    font-family: 'DM Mono', monospace !important;
+    font-size: 12px !important;
+    letter-spacing: 0.04em !important;
+}
+[data-testid="stBaseButton-secondary"]:hover {
+    background: rgba(40,46,55,0.7) !important;
+    color: #E5E7EB !important;
+    border-color: rgba(255,255,255,0.15) !important;
+}
+
+/* ── Sidebar section labels (legacy, kept for compat) ── */
+.sidebar-section {
+    color: #FFFFFF;
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-family: 'DM Mono', monospace;
+    margin: 18px 0 8px 0;
     display: block;
-    opacity: 0.6;
+}
+
+/* ── Sidebar brand ── */
+.sb-brand {
+    display: flex; align-items: center; gap: 10px;
+    padding: 22px 8px 18px 8px;
+    border-bottom: 1px solid rgba(255,255,255,0.07);
+    margin-bottom: 12px;
+}
+.sb-brand-text {
+    font-family: 'DM Mono', monospace;
+    font-size: 15px; font-weight: 700;
+    color: #FFFFFF; letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+
+/* ── Sidebar profile block ── */
+.sb-profile {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px 8px 12px 4px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    margin-bottom: 8px;
+}
+.sb-profile-avatar {
+    width: 40px; height: 40px; border-radius: 50%;
+    background: linear-gradient(135deg, #A06EDC 0%, #00CC77 100%);
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'DM Mono', monospace; font-size: 13px;
+    font-weight: 600; color: #FFFFFF; flex-shrink: 0;
+}
+.sb-profile-name {
+    font-family: 'DM Sans', sans-serif; font-size: 14px;
+    font-weight: 600; color: #E5E7EB; line-height: 1.2;
+}
+.sb-profile-sub {
+    font-family: 'DM Mono', monospace; font-size: 10px;
+    color: #4B5563; text-transform: uppercase; letter-spacing: 0.1em;
+}
+
+/* ── Sidebar menu section label ── */
+.sb-menu-label {
+    color: #9CA3AF;
+    font-size: 11px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.14em;
+    font-family: 'DM Mono', monospace;
+    margin: 0;
+    display: block;
+}
+
+/* ── Sidebar section box ── */
+.sb-section-box {
+    background: rgba(20, 23, 30, 0.7);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 16px;
+    padding: 14px 12px;
+    margin-bottom: 10px;
+}
+
+/* ── Sidebar expander styling ── */
+div[data-testid="stSidebar"] details {
+    background: rgba(255,255,255,0.03) !important;
+    border: 1px solid rgba(255,255,255,0.09) !important;
+    border-top: 1px solid rgba(255,255,255,0.13) !important;
+    border-radius: 16px !important;
+    margin-bottom: 10px !important;
+    padding: 2px 4px !important;
+    backdrop-filter: blur(12px) !important;
+    -webkit-backdrop-filter: blur(12px) !important;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.25), 0 1px 0 rgba(255,255,255,0.04) inset !important;
+    transition: border-color 0.2s, box-shadow 0.2s !important;
+}
+div[data-testid="stSidebar"] details:hover {
+    border-color: rgba(255,255,255,0.15) !important;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.35), 0 1px 0 rgba(255,255,255,0.05) inset !important;
+}
+div[data-testid="stSidebar"] details summary {
+    font-family: 'DM Mono', monospace !important;
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    color: #9CA3AF !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.14em !important;
+    padding: 12px 10px !important;
+    background: transparent !important;
+}
+div[data-testid="stSidebar"] details summary:hover {
+    color: #E5E7EB !important;
+}
+div[data-testid="stSidebar"] details[open] summary {
+    color: #E5E7EB !important;
+    border-bottom: 1px solid rgba(255,255,255,0.06) !important;
+    margin-bottom: 4px !important;
+}
+/* Sidebar widget text forced light */
+div[data-testid="stSidebar"] label,
+div[data-testid="stSidebar"] .stCaption,
+div[data-testid="stSidebar"] p {
+    color: #9CA3AF !important;
+}
+div[data-testid="stSidebar"] .stSelectbox label,
+div[data-testid="stSidebar"] .stSlider label,
+div[data-testid="stSidebar"] .stCheckbox label {
+    color: #D1D5DB !important;
+}
+
+/* ── Mode badges ── */
+.mode-badge-demo {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 4px 14px; border-radius: 100px;
+    background: rgba(160,110,220,0.12);
+    border: 1px solid rgba(160,110,220,0.3);
+    color: #A06EDC; font-family: 'DM Mono', monospace;
+    font-size: 11px; font-weight: 600; letter-spacing: 0.06em;
+}
+.mode-badge-live {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 4px 14px; border-radius: 100px;
+    background: rgba(0,204,119,0.1);
+    border: 1px solid rgba(0,204,119,0.3);
+    color: #00CC77; font-family: 'DM Mono', monospace;
+    font-size: 11px; font-weight: 600; letter-spacing: 0.06em;
+    box-shadow: 0 0 10px rgba(0,204,119,0.15);
+}
+
+/* ── Hero section ── */
+.hero-wrap {
+    position: relative; width: 100%; min-height: 92vh;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    border-radius: 24px; overflow: hidden;
+    margin-bottom: 48px;
+    background: radial-gradient(ellipse 90% 70% at 50% 30%,
+        rgba(80,40,160,0.25) 0%, rgba(0,204,119,0.04) 55%, rgba(10,12,16,1) 80%);
+    border: 1px solid rgba(255,255,255,0.06);
+}
+.hero-title {
+    font-family: 'DM Mono', monospace;
+    font-size: clamp(48px, 8vw, 96px);
+    font-weight: 500; color: #FFFFFF;
+    letter-spacing: 0.04em; line-height: 1.05;
+    text-align: center; margin: 0; z-index: 2; position: relative;
+    text-shadow: 0 0 60px rgba(160,110,220,0.4), 0 0 120px rgba(0,204,119,0.15);
+}
+.hero-subtitle {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 16px; color: #6B7280;
+    text-align: center; margin: 14px 0 0 0;
+    max-width: 520px; line-height: 1.6;
+    z-index: 2; position: relative;
+}
+@keyframes eegFlow {
+    0%   { stroke-dashoffset: 400; }
+    100% { stroke-dashoffset: 0; }
+}
+.eeg-trace { stroke-dasharray: 400; animation: eegFlow 3s linear infinite; }
+
+/* ── Home mode cards ── */
+.home-card-demo {
+    background: rgba(25,18,40,0.7);
+    border: 1px solid rgba(160,110,220,0.25);
+    border-top: 2px solid rgba(160,110,220,0.45);
+    backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+    border-radius: 24px; padding: 40px 32px;
+    text-align: center; cursor: pointer;
+    transition: border-color 0.25s, background 0.25s, transform 0.25s, box-shadow 0.25s;
+    height: 100%;
+    box-shadow: 0 4px 24px rgba(160,110,220,0.1);
+}
+.home-card-demo:hover {
+    border-color: rgba(160,110,220,0.55);
+    background: rgba(35,22,55,0.85);
+    transform: translateY(-3px);
+    box-shadow: 0 12px 40px rgba(160,110,220,0.2);
+}
+.home-card-live {
+    background: rgba(10,28,20,0.7);
+    border: 1px solid rgba(0,204,119,0.25);
+    border-top: 2px solid rgba(0,204,119,0.45);
+    backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+    border-radius: 24px; padding: 40px 32px;
+    text-align: center; cursor: pointer;
+    transition: border-color 0.25s, background 0.25s, transform 0.25s, box-shadow 0.25s;
+    height: 100%;
+    box-shadow: 0 4px 24px rgba(0,204,119,0.08);
+}
+.home-card-live:hover {
+    border-color: rgba(0,204,119,0.55);
+    background: rgba(12,36,25,0.9);
+    transform: translateY(-3px);
+    box-shadow: 0 12px 40px rgba(0,204,119,0.18);
 }
 </style>
 """, unsafe_allow_html=True)
@@ -518,7 +792,7 @@ class MuseStreamer:
         self._running = True
         self._thread  = threading.Thread(target=self._collect, daemon=True)
         self._thread.start()
-        return True, "Connected ✅"
+        return True, "Connected"
 
     def _collect(self):
         while self._running and self._inlet:
@@ -668,16 +942,16 @@ def load_model(path: str) -> Tuple[Optional[nn.Module], str, dict]:
     expected = {"stress_head", "subject_head", "projector"}
     critical = [k for k in result.missing_keys if not any(x in k for x in expected)]
     if critical:
-        diag["status"] = f"❌ Missing: {critical[:4]}"
+        diag["status"] = f"Error — missing keys: {critical[:4]}"
         return None, "Architecture mismatch", diag
-    diag["status"] = "✅ All inference keys loaded"
+    diag["status"] = "All inference keys loaded"
     model = model.to(DEVICE).eval()
     try:
         with torch.inference_mode():
             out, _ = model(torch.zeros(1,1,4,512,device=DEVICE),
                            torch.zeros(1,3,512,device=DEVICE),
                            torch.zeros(1,36,device=DEVICE))
-        diag["fwd"] = f"✅ Forward pass OK {tuple(out.shape)}"
+        diag["fwd"] = f"Forward pass OK {tuple(out.shape)}"
     except Exception as e:
         return None, f"Forward pass failed: {e}", diag
     return model, "OK", diag
@@ -804,7 +1078,7 @@ _defaults: dict = {
     "fss":              0,
     "streak":           FocusStreak(),
     "app_mode":         "📼 Demo — pre-recorded subjects",
-    "active_tab":       "⚡ Live",
+    "active_tab":       "Live",
     "muse_streamer":    None, "muse_connected": False,
     "signal_stable":    True, "signal_reason": "OK", "stable_count": 0,
     "speed":            0.5, "ema_alpha": 0.7,
@@ -883,10 +1157,11 @@ def make_workload_bar_html(wl: float, gt_str: str = "") -> str:
     pct   = max(min(wl, 100), 0)
     color = _wl_color(wl)
     grad  = f"linear-gradient(90deg, {color}55 0%, {color} 100%)"
+    glow  = "box-shadow:0 0 30px rgba(220,60,60,0.25),0 0 60px rgba(220,60,60,0.1);" if wl >= 70 else ""
     sub   = (f'<span style="color:#4B5563;font-size:11px;'
              f'font-family:\'DM Mono\',monospace">&nbsp;{gt_str}</span>') if gt_str else ""
     return f"""
-    <div class="bb-card-hero" style="min-height:110px">
+    <div class="bb-card-hero" style="min-height:110px;{glow}">
       <span class="bb-label">Cognitive Workload</span>
       <div style="display:flex;align-items:baseline;gap:10px;margin:6px 0 4px 0">
         <span class="bb-value" style="color:{color};font-size:52px">{pct:.0f}</span>
@@ -1009,76 +1284,128 @@ def make_history_chart(records: list) -> go.Figure:
 
 def render_home():
     """Landing page. Sidebar is hidden via CSS while this renders."""
-    # Hide sidebar on home
     st.markdown("""
     <style>
     div[data-testid="stSidebar"],
     div[data-testid="stSidebarCollapsedControl"] { display: none !important; }
+    .block-container { padding: 0 2rem 3rem 2rem !important; }
     </style>
+    <a name="bb-top"></a>
     """, unsafe_allow_html=True)
 
-    # Hero image
+    # ── Full-viewport BCI hero ────────────────────────────────────────────────
     st.markdown("""
-    <div style="width:100%;height:340px;border-radius:24px;overflow:hidden;
-                margin-bottom:36px;position:relative">
-      <img src="https://images.unsplash.com/photo-1559757175-5700dde675bc?q=80&w=2000"
-           style="width:100%;height:100%;object-fit:cover;opacity:0.7"/>
-      <div style="position:absolute;inset:0;
-                  background:linear-gradient(to bottom,rgba(10,12,16,0.1) 0%,rgba(10,12,16,0.7) 100%)">
+    <div class="hero-wrap">
+      <!-- Background SVG neural + EEG traces -->
+      <svg width="100%" height="100%" viewBox="0 0 800 600"
+           xmlns="http://www.w3.org/2000/svg"
+           style="position:absolute;inset:0;opacity:0.55">
+        <!-- Neural connections input → h1 -->
+        <line x1="100" y1="120" x2="320" y2="180" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>
+        <line x1="100" y1="200" x2="320" y2="180" stroke="rgba(255,255,255,0.07)" stroke-width="1"/>
+        <line x1="100" y1="280" x2="320" y2="260" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>
+        <line x1="100" y1="360" x2="320" y2="340" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+        <line x1="100" y1="440" x2="320" y2="420" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+        <!-- h1 → h2 -->
+        <line x1="330" y1="180" x2="520" y2="220" stroke="rgba(160,110,220,0.08)" stroke-width="1"/>
+        <line x1="330" y1="260" x2="520" y2="220" stroke="rgba(160,110,220,0.08)" stroke-width="1"/>
+        <line x1="330" y1="340" x2="520" y2="380" stroke="rgba(160,110,220,0.09)" stroke-width="1"/>
+        <line x1="330" y1="420" x2="520" y2="380" stroke="rgba(160,110,220,0.07)" stroke-width="1"/>
+        <!-- h2 → output -->
+        <line x1="530" y1="220" x2="690" y2="300" stroke="rgba(0,204,119,0.15)" stroke-width="1.5"/>
+        <line x1="530" y1="380" x2="690" y2="300" stroke="rgba(0,204,119,0.15)" stroke-width="1.5"/>
+        <!-- Input nodes (EEG channels) -->
+        <circle cx="100" cy="120" r="8" fill="#00CC77" opacity="0.7"/>
+        <circle cx="100" cy="200" r="8" fill="#00CC77" opacity="0.7"/>
+        <circle cx="100" cy="280" r="8" fill="#00CC77" opacity="0.7"/>
+        <circle cx="100" cy="360" r="8" fill="#00CC77" opacity="0.7"/>
+        <circle cx="100" cy="440" r="8" fill="#E09000" opacity="0.55"/>
+        <text x="100" y="488" text-anchor="middle" fill="rgba(107,114,128,0.5)"
+              font-family="DM Mono" font-size="9">EEG · Physio · Freq</text>
+        <!-- Hidden nodes -->
+        <circle cx="325" cy="180" r="9" fill="#A06EDC" opacity="0.6"/>
+        <circle cx="325" cy="260" r="9" fill="#A06EDC" opacity="0.6"/>
+        <circle cx="325" cy="340" r="9" fill="#A06EDC" opacity="0.6"/>
+        <circle cx="325" cy="420" r="9" fill="#A06EDC" opacity="0.5"/>
+        <circle cx="525" cy="220" r="8" fill="#A06EDC" opacity="0.4"/>
+        <circle cx="525" cy="380" r="8" fill="#A06EDC" opacity="0.4"/>
+        <!-- Output node -->
+        <circle cx="695" cy="300" r="14" fill="rgba(0,204,119,0.12)"
+                stroke="#00CC77" stroke-width="2" opacity="0.85"/>
+        <text x="695" y="328" text-anchor="middle" fill="rgba(0,204,119,0.5)"
+              font-family="DM Mono" font-size="9">Brain Load</text>
+        <!-- Animated EEG trace across hero -->
+        <path class="eeg-trace" d="M 30 520 Q 60 490 90 520 Q 120 550 150 480 Q 180 410 210 520
+                                    Q 240 580 270 520 Q 300 460 330 520 Q 360 560 390 510
+                                    Q 420 460 450 520 Q 480 570 510 520 Q 540 470 570 520
+                                    Q 600 560 630 490 Q 660 420 690 520 Q 720 580 750 520 L 780 520"
+              fill="none" stroke="rgba(0,204,119,0.3)" stroke-width="1.5"/>
+        <path class="eeg-trace" d="M 30 545 Q 55 530 80 545 Q 110 560 140 520 Q 170 480 200 545
+                                    Q 230 600 260 545 Q 290 490 320 545 Q 350 590 380 545
+                                    Q 410 500 440 545 Q 470 580 500 545 Q 530 510 560 545
+                                    Q 590 575 620 530 Q 650 485 680 545 Q 710 590 740 545 L 780 545"
+              fill="none" stroke="rgba(160,110,220,0.2)" stroke-width="1"
+              style="animation-delay:1s"/>
+      </svg>
+
+      <!-- Text overlay -->
+      <div style="z-index:2;position:relative;text-align:center;padding:0 24px">
+        <h1 class="hero-title">BRAIN BATTERY</h1>
+        <p class="hero-subtitle">See how hard your brain is working — in real time</p>
+      </div>
+
+      <!-- Scroll hint -->
+      <div style="position:absolute;bottom:32px;left:50%;transform:translateX(-50%);
+                  z-index:2;text-align:center">
+        <span style="font-family:'DM Mono',monospace;font-size:10px;color:#374151;
+                     letter-spacing:0.2em">↓ EXPLORE</span>
       </div>
     </div>
     """, unsafe_allow_html=True)
 
-    # Title + summary
-    st.markdown("""
-    <div style="text-align:center;margin-bottom:48px">
-      <h1 style="color:#FFFFFF;font-family:'DM Mono',monospace;font-size:42px;
-                 font-weight:500;letter-spacing:0.05em;margin:0 0 20px 0">
-        Brain Battery — Brain Monitor
-      </h1>
-      <p style="color:#9CA3AF;font-size:16px;font-family:'DM Sans',sans-serif;
-                line-height:1.75;max-width:720px;margin:0 auto">
-        Brain Battery uses advanced subject-agnostic neural networks to transform raw EEG
-        and physiological data into a real-time cognitive workload score. By monitoring
-        mental effort and fatigue, it empowers users to optimize their focus and prevent
-        burnout. Experience the future of neurotechnology through our interactive data
-        demo or by connecting your own Muse headset.
-      </p>
-    </div>
-    """, unsafe_allow_html=True)
-
-    # Choice cards
+    # ── Mode choice cards ─────────────────────────────────────────────────────
     c1, c2 = st.columns(2, gap="large")
 
     with c1:
         st.markdown("""
-        <div class="home-card">
-          <div style="font-size:48px;margin-bottom:16px">📼</div>
+        <div class="home-card-demo">
+          <div style="font-size:52px;margin-bottom:16px;
+                      filter:drop-shadow(0 0 20px rgba(160,110,220,0.5))">📼</div>
+          <div style="display:inline-block;padding:3px 12px;border-radius:100px;
+                      background:rgba(160,110,220,0.1);border:1px solid rgba(160,110,220,0.3);
+                      color:#A06EDC;font-family:'DM Mono',monospace;font-size:10px;
+                      letter-spacing:0.1em;margin-bottom:14px">DEMO MODE</div>
           <h2 style="color:#FFFFFF;font-family:'DM Mono',monospace;font-size:20px;
                      font-weight:500;letter-spacing:0.03em;margin:0 0 12px 0">
-            Pre-recorded Demo
+            Pre-recorded Data
           </h2>
-          <p style="color:#9CA3AF;font-size:14px;font-family:'DM Sans',sans-serif;
+          <p style="color:#C4B5E8;font-size:14px;font-family:'DM Sans',sans-serif;
                     line-height:1.6;margin:0">
-            Replay cognitive workload data from 24 subjects in the UNIVERSE dataset.
-            Watch the model classify mental effort in real time, with ground-truth labels.
+            Replay real EEG sessions from 24 research subjects. Watch the model
+            classify mental effort in real time, with ground-truth labels to compare against.
           </p>
         </div>
         """, unsafe_allow_html=True)
         if st.button("Launch Demo", key="home_demo", use_container_width=True, type="primary"):
-            st.session_state.app_mode = "📼 Demo — pre-recorded subjects"
-            st.session_state.page     = "app"
+            st.session_state.app_mode   = "📼 Demo — pre-recorded subjects"
+            st.session_state.page       = "app"
+            st.session_state.active_tab = "Live"
             st.rerun()
 
     with c2:
         st.markdown("""
-        <div class="home-card">
-          <div style="font-size:48px;margin-bottom:16px">🎧</div>
+        <div class="home-card-live">
+          <div style="font-size:52px;margin-bottom:16px;
+                      filter:drop-shadow(0 0 20px rgba(0,204,119,0.4))">🎧</div>
+          <div style="display:inline-block;padding:3px 12px;border-radius:100px;
+                      background:rgba(0,204,119,0.08);border:1px solid rgba(0,204,119,0.3);
+                      color:#00CC77;font-family:'DM Mono',monospace;font-size:10px;
+                      letter-spacing:0.1em;margin-bottom:14px">LIVE MODE</div>
           <h2 style="color:#FFFFFF;font-family:'DM Mono',monospace;font-size:20px;
                      font-weight:500;letter-spacing:0.03em;margin:0 0 12px 0">
-            Live Muse Mode
+            Live Muse Headband
           </h2>
-          <p style="color:#9CA3AF;font-size:14px;font-family:'DM Sans',sans-serif;
+          <p style="color:#A7F3D0;font-size:14px;font-family:'DM Sans',sans-serif;
                     line-height:1.6;margin:0">
             Connect your Muse headband via BlueMuse for live EEG streaming.
             The model adapts to your personal cognitive baseline in real time.
@@ -1086,57 +1413,73 @@ def render_home():
         </div>
         """, unsafe_allow_html=True)
         if st.button("Connect Muse", key="home_live", use_container_width=True, type="secondary"):
-            st.session_state.app_mode = "🎧 Live — Muse headband"
-            st.session_state.page     = "app"
+            st.session_state.app_mode   = "🎧 Live — Muse headband"
+            st.session_state.page       = "app"
+            st.session_state.active_tab = "Live"
             st.rerun()
 
-    st.markdown("<br>", unsafe_allow_html=True)
-    st.markdown('<div class="bb-divider"></div>', unsafe_allow_html=True)
-    st.markdown("<br>", unsafe_allow_html=True)
+    st.markdown('<div class="bb-divider" style="margin:8px 0 24px 0"></div>',
+                unsafe_allow_html=True)
 
-    # Info section
-    inf1, inf2, inf3 = st.columns(3, gap="large")
-
-    with inf1:
-        st.markdown("""
-        <div class="bb-card" style="height:100%">
-          <p class="bb-label">How it Works</p>
-          <p class="bb-desc">
-            Raw 4-channel EEG and physiological signals are passed through a
-            subject-agnostic neural network (EEGNet + PhysioCNN + FreqEncoder).
-            An SQI-conditioned attention gate weighs each modality by real-time
-            signal quality, producing a clean 0–100% workload score per 2-second epoch.
-          </p>
+    # ── Info cards — plain-English ────────────────────────────────────────────
+    st.markdown("""
+    <div class="bb-card">
+      <p class="bb-label">How it Works</p>
+      <div style="height:4px"></div>
+      <p class="bb-desc">
+        Every 2 seconds, Brain Battery reads your brain and body signals and gives
+        you a score from 0 to 100:
+      </p>
+      <div style="margin-top:12px;display:flex;flex-direction:column;gap:8px">
+        <div style="display:flex;align-items:flex-start;gap:12px">
+          <span style="color:#00CC77;font-family:'DM Mono',monospace;font-size:12px;
+                       margin-top:2px;min-width:16px">01</span>
+          <span class="bb-desc" style="margin:0">Reads your brainwaves (EEG) to detect mental effort — available in both Demo and Live modes</span>
         </div>
-        """, unsafe_allow_html=True)
-
-    with inf2:
-        st.markdown("""
-        <div class="bb-card" style="height:100%">
-          <p class="bb-label">Goal</p>
-          <p class="bb-desc">
-            Demonstrate that spectral EEG features generalize across subjects without
-            individual calibration. Brain Battery is a research prototype built on the
-            UNIVERSE dataset (n=12 LOSO). Not a medical device — results reflect
-            population-level trends, not clinical diagnoses.
-          </p>
+        <div style="display:flex;align-items:flex-start;gap:12px">
+          <span style="color:#A06EDC;font-family:'DM Mono',monospace;font-size:12px;
+                       margin-top:2px;min-width:16px">02</span>
+          <span class="bb-desc" style="margin:0">Checks heart rate &amp; skin response to confirm stress —
+            <span style="color:#A06EDC">Demo only.</span>
+            The Muse headband is EEG-only; Live mode runs on brainwaves alone</span>
         </div>
-        """, unsafe_allow_html=True)
-
-    with inf3:
-        st.markdown("""
-        <div class="bb-card" style="height:100%">
-          <p class="bb-label">Feedback</p>
-          <p class="bb-desc">
-            Questions, bug reports, or collaboration inquiries are welcome.<br><br>
-            <strong style="color:#D1D5DB">Email:</strong>
-            brandondong999@gmail.com<br><br>
-            <strong style="color:#D1D5DB">Survey:</strong>
-            <a href="https://airtable.com/appeHlM73XGFPtG2E/shrhWUKHei0fypfTw"
-               style="color:#D1D5DB" target="_blank">Feedback form ↗</a>
-          </p>
+        <div style="display:flex;align-items:flex-start;gap:12px">
+          <span style="color:#00CC77;font-family:'DM Mono',monospace;font-size:12px;
+                       margin-top:2px;min-width:16px">03</span>
+          <span class="bb-desc" style="margin:0">Tracks frequency patterns in your brainwaves that reveal tiredness over time — available in both modes</span>
         </div>
-        """, unsafe_allow_html=True)
+      </div>
+    </div>
+
+    <div class="bb-card">
+      <p class="bb-label">Goal</p>
+      <div style="height:4px"></div>
+      <p class="bb-desc">
+        Demonstrate that spectral EEG features generalize across subjects without
+        individual calibration. Brain Battery is a research prototype built on the
+        UNIVERSE dataset (n=12 LOSO). Not a medical device — results reflect
+        population-level trends, not clinical diagnoses.
+      </p>
+    </div>
+
+    <div class="bb-card">
+      <p class="bb-label">Feedback</p>
+      <div style="height:4px"></div>
+      <p class="bb-desc">
+        Questions, bug reports, or collaboration inquiries are welcome.<br><br>
+        <strong style="color:#D1D5DB">Email:</strong>
+        brandondong999@gmail.com<br><br>
+        <strong style="color:#D1D5DB">Survey:</strong>
+        <a href="https://airtable.com/appeHlM73XGFPtG2E/shrhWUKHei0fypfTw"
+           style="color:#D1D5DB" target="_blank">Feedback form ↗</a>
+      </p>
+    </div>
+
+    <div style="text-align:center;padding:24px 0 8px 0">
+      <a href="#bb-top" style="color:#4B5563;font-family:'DM Mono',monospace;
+         font-size:11px;text-decoration:none;letter-spacing:0.12em">↑ BACK TO TOP</a>
+    </div>
+    """, unsafe_allow_html=True)
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -1148,154 +1491,135 @@ if st.session_state.page == "home":
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# 15. SIDEBAR  (app page only)
+# 15. LOAD MODEL  (moved before sidebar so model_diag is available there)
+# ══════════════════════════════════════════════════════════════════════════════
+model, model_status, model_diag = load_model(PT_PATH)
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# 16. SIDEBAR  (app page only)
 # NOTE: st.sidebar.* FORBIDDEN inside @st.fragment.
 # Fragment writes debug to st.session_state._dbg_*, sidebar reads here.
 # ══════════════════════════════════════════════════════════════════════════════
 with st.sidebar:
-    # ── NAVIGATION ───────────────────────────────────────────────────────────
-    st.markdown('<span class="sidebar-section">Navigation</span>', unsafe_allow_html=True)
-    if st.button("🏠 Home", use_container_width=True):
-        _save_session_history()
-        st.session_state.running         = False
-        st.session_state.frame_idx       = 0
-        st.session_state._run_complete   = False
-        st.session_state.muse_connected  = False
-        st.session_state.live_subpage    = "overview"
-        _reset_history()
-        st.session_state.page = "home"
-        st.rerun()
+    _app_mode   = st.session_state.app_mode
+    _is_demo_sb = _app_mode == "📼 Demo — pre-recorded subjects"
 
-    # ── Back to Dashboard (only visible in Live Setup) ──
-    if (st.session_state.app_mode == "🎧 Live — Muse headband"
-            and st.session_state.get("live_subpage") == "setup"):
-        if st.button("← Back to Dashboard", use_container_width=True, key="nav_back_dash"):
-            st.session_state.live_subpage = "overview"
-            st.rerun()
+    # ── Brand ────────────────────────────────────────────────────────────────
+    st.markdown("""<div class="sb-brand">
+      <span class="sb-brand-text">BRAIN BATTERY</span>
+    </div>""", unsafe_allow_html=True)
 
-    st.markdown('<div class="bb-divider" style="margin:10px 0"></div>', unsafe_allow_html=True)
-
-    # ── DEMO SETTINGS ────────────────────────────────────────────────────────
-    st.markdown('<span class="sidebar-section">Demo Settings</span>', unsafe_allow_html=True)
-
-    app_mode = st.radio("Input source",
-                         ["📼 Demo — pre-recorded subjects", "🎧 Live — Muse headband"],
-                         index=["📼 Demo — pre-recorded subjects",
-                                "🎧 Live — Muse headband"].index(st.session_state.app_mode))
-    if app_mode != st.session_state.app_mode:
-        _save_session_history()
-        st.session_state.app_mode        = app_mode
-        st.session_state.running         = False
-        st.session_state.muse_connected  = False
-        st.session_state._eeg_data       = None
-        st.session_state._loaded_subject = -1
-        _reset_history()
-        st.rerun()
-
-    if app_mode == "📼 Demo — pre-recorded subjects":
-        st.markdown('<span class="bb-label">Dataset subject</span>', unsafe_allow_html=True)
-        subj_sel = st.selectbox(
-            "Replay subject",
-            list(range(24)),
-            format_func=lambda x: f"Subject {x + 1}",
-            index=min(st.session_state.subject_idx, 23),
-        )
-        if subj_sel != st.session_state.subject_idx:
+    # ── NAVIGATE expander ────────────────────────────────────────────────────
+    with st.expander("Navigate", expanded=True):
+        if st.button("Home", use_container_width=True, key="nav_home"):
             _save_session_history()
-            st.session_state.subject_idx     = subj_sel
-            st.session_state.frame_idx       = 0
             st.session_state.running         = False
+            st.session_state.frame_idx       = 0
             st.session_state._run_complete   = False
-            st.session_state._eeg_data       = None
-            st.session_state._physio_data    = None
-            st.session_state._labels_data    = None
-            st.session_state._freq_all       = None
-            st.session_state._loaded_subject = -1
+            st.session_state.muse_connected  = False
+            st.session_state.live_subpage    = "overview"
             _reset_history()
+            st.session_state.page = "home"
             st.rerun()
-        st.caption("Arc: last 200 calm → first 200 high-load epochs")
+        if (_app_mode == "🎧 Live — Muse headband"
+                and st.session_state.get("live_subpage") == "setup"):
+            if st.button("Back to Dashboard", use_container_width=True, key="nav_back_dash"):
+                st.session_state.live_subpage = "overview"
+                st.rerun()
 
-    st.markdown('<div class="bb-divider" style="margin:10px 0"></div>', unsafe_allow_html=True)
-    st.markdown('<span class="bb-label">Playback</span>', unsafe_allow_html=True)
-    st.session_state.speed     = st.slider("Frame delay (s)", 0.1, 2.0, 0.5, 0.1)
-    st.session_state.ema_alpha = st.slider("Smoothing (α)", 0.1, 1.0, 0.7, 0.05,
-                                            help="display[t] = α·model[t] + (1−α)·display[t−1]")
-    st.session_state.show_gt   = st.checkbox("Show ground truth label", value=True)
-    st.session_state.lite_mode = st.checkbox("Low-bandwidth mode", value=False,
-                                              help="Hides raw waveforms.")
-
-    st.markdown('<div class="bb-divider" style="margin:10px 0"></div>', unsafe_allow_html=True)
-
-    # ── LIVE CONNECTIVITY ────────────────────────────────────────────────────
-    st.markdown('<span class="sidebar-section">Live Connectivity</span>', unsafe_allow_html=True)
-
-    st.markdown('<span class="bb-label">👤 User profile</span>', unsafe_allow_html=True)
-    existing = list_users()
-    options  = (existing or []) + ["➕ New user…"]
-    safe_idx = existing.index(st.session_state.user_id) if st.session_state.user_id in existing else 0
-    sel_user = st.selectbox("Who is using the system?", options, index=safe_idx)
-
-    if sel_user == "➕ New user…":
-        new_name = st.text_input("Name (letters/numbers)")
-        if st.button("Create") and new_name.strip():
-            clean = "".join(c for c in new_name.strip() if c.isalnum() or c == "_")
-            if clean:
-                save_profile(clean, default_profile())
-                st.session_state.user_id = clean
-                st.session_state.profile = default_profile()
+    # ── Mode-specific expander ────────────────────────────────────────────────
+    if _is_demo_sb:
+        with st.expander("Playback", expanded=True):
+            st.markdown('<span class="bb-label">Dataset subject</span>',
+                        unsafe_allow_html=True)
+            subj_sel = st.selectbox(
+                "Replay subject",
+                list(range(24)),
+                format_func=lambda x: f"Subject {x + 1}",
+                index=min(st.session_state.subject_idx, 23),
+            )
+            if subj_sel != st.session_state.subject_idx:
+                _save_session_history()
+                st.session_state.subject_idx     = subj_sel
+                st.session_state.frame_idx       = 0
+                st.session_state.running         = False
+                st.session_state._run_complete   = False
+                st.session_state._eeg_data       = None
+                st.session_state._physio_data    = None
+                st.session_state._labels_data    = None
+                st.session_state._freq_all       = None
+                st.session_state._loaded_subject = -1
                 _reset_history()
                 st.rerun()
+            st.caption("Arc: last 200 calm → first 200 high-load epochs")
+            st.session_state.speed     = st.slider("Frame delay (s)", 0.1, 2.0, 0.5, 0.1)
+            st.session_state.ema_alpha = st.slider("Smoothing (α)", 0.1, 1.0, 0.7, 0.05,
+                                                    help="display[t] = α·model[t] + (1−α)·display[t−1]")
+            st.session_state.show_gt   = st.checkbox("Show ground truth label", value=True)
+            st.session_state.lite_mode = st.checkbox("Low-bandwidth mode", value=False,
+                                                      help="Hides raw waveforms.")
     else:
-        if sel_user != st.session_state.user_id:
-            st.session_state.user_id = sel_user
-            st.session_state.profile = load_profile(sel_user)
-            _reset_history()
-            st.rerun()
+        with st.expander("Connectivity", expanded=True):
+            st.markdown('<span class="bb-label">User profile</span>',
+                        unsafe_allow_html=True)
+            existing = list_users()
+            options  = (existing or []) + ["+ New user"]
+            safe_idx = existing.index(st.session_state.user_id) if st.session_state.user_id in existing else 0
+            sel_user = st.selectbox("Who is using the system?", options, index=safe_idx)
 
-    profile = st.session_state.profile
-    obs     = profile["count"] - 1
+            if sel_user == "+ New user":
+                new_name = st.text_input("Name (letters/numbers)")
+                if st.button("Create") and new_name.strip():
+                    clean = "".join(c for c in new_name.strip() if c.isalnum() or c == "_")
+                    if clean:
+                        save_profile(clean, default_profile())
+                        st.session_state.user_id = clean
+                        st.session_state.profile = default_profile()
+                        _reset_history()
+                        st.rerun()
+            else:
+                if sel_user != st.session_state.user_id:
+                    st.session_state.user_id = sel_user
+                    st.session_state.profile = load_profile(sel_user)
+                    _reset_history()
+                    st.rerun()
 
-    if app_mode == "🎧 Live — Muse headband":
-        st.progress(min(obs/200.0, 1.0), text=f"Personalizing… {obs}/200")
-        if obs < 50:    st.info("🔵 Zero-calibration (population prior)")
-        elif obs < 200: st.warning(f"🟡 Calibrating ({obs}/200)")
-        else:           st.success("🟢 Personalized")
-        st.caption(f"Mean CW: {profile['mean']:.3f}  |  "
-                   f"Threshold: {personalized_threshold(profile):.3f}")
-    else:
-        st.caption("Personalization active in Live mode only.")
+            profile = st.session_state.profile
+            obs     = profile["count"] - 1
+            st.progress(min(obs / 200.0, 1.0), text=f"Personalizing… {obs}/200")
+            if obs < 50:    st.info("Zero-calibration (population prior)")
+            elif obs < 200: st.warning(f"Calibrating ({obs}/200)")
+            else:           st.success("Personalized")
+            st.caption(f"Mean CW: {profile['mean']:.3f}  |  "
+                       f"Threshold: {personalized_threshold(profile):.3f}")
+            if st.button("Reset my profile"):
+                st.session_state.profile = default_profile()
+                save_profile(st.session_state.user_id, default_profile())
+                _reset_history()
+                st.rerun()
 
-    if st.button("Reset my profile"):
-        st.session_state.profile = default_profile()
-        save_profile(st.session_state.user_id, default_profile())
-        _reset_history()
-        st.rerun()
-
-    st.markdown('<div class="bb-divider" style="margin:10px 0"></div>', unsafe_allow_html=True)
-    st.caption(f"Device: {DEVICE}")
-
-    if st.session_state.get("_dbg_frame", 0) > 0:
-        st.markdown('<span class="bb-label">🔬 Debug</span>', unsafe_allow_html=True)
-        st.caption(
-            f"Frame {st.session_state._dbg_frame}  "
-            f"P(CW)={st.session_state._dbg_cw:.3f}\n"
-            f"freq μ={st.session_state._dbg_freq_mean:.3f}  "
-            f"σ={st.session_state._dbg_freq_std:.3f}"
-        )
+    # ── Advanced (collapsed) ──────────────────────────────────────────────────
+    with st.expander("Advanced", expanded=False):
+        st.caption(f"Device: {DEVICE}")
+        ds_label = model_diag.get("status", "")
+        if "Error" in ds_label: st.error(ds_label)
+        elif ds_label:       st.success(ds_label)
+        if model_diag.get("fwd"): st.success(model_diag["fwd"])
+        st.caption(f"Keys (first 6): {model_diag.get('ckpt_keys', 'N/A')}")
+        if st.session_state.get("_dbg_frame", 0) > 0:
+            st.markdown('<span class="bb-label">Debug</span>', unsafe_allow_html=True)
+            st.caption(
+                f"Frame {st.session_state._dbg_frame}  "
+                f"P(CW)={st.session_state._dbg_cw:.3f}\n"
+                f"freq μ={st.session_state._dbg_freq_mean:.3f}  "
+                f"σ={st.session_state._dbg_freq_std:.3f}"
+            )
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# 16. LOAD MODEL + DATA
+# 17-pre. DATA LOADING PREP
 # ══════════════════════════════════════════════════════════════════════════════
-model, model_status, model_diag = load_model(PT_PATH)
-
-with st.sidebar:
-    st.markdown('<span class="sidebar-section">Model Status</span>', unsafe_allow_html=True)
-    ds_label = model_diag.get("status", "")
-    if "❌" in ds_label: st.error(ds_label)
-    elif ds_label:       st.success(ds_label)
-    if model_diag.get("fwd"): st.success(model_diag["fwd"])
-    st.caption(f"Keys (first 6): {model_diag.get('ckpt_keys','N/A')}")
 
 st.session_state._model = model
 is_demo = st.session_state.app_mode == "📼 Demo — pre-recorded subjects"
@@ -1314,9 +1638,9 @@ if is_demo:
             st.session_state._freq_all       = freq_d
             st.session_state._loaded_subject = st.session_state.subject_idx
         else:
-            st.error(f"❌ Data: {data_status}"); st.stop()
+            st.error(f"Data error: {data_status}"); st.stop()
     if model_status != "OK":
-        st.error(f"❌ Model: {model_status}"); st.stop()
+        st.error(f"Model error: {model_status}"); st.stop()
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -1324,13 +1648,17 @@ if is_demo:
 # ══════════════════════════════════════════════════════════════════════════════
 hc1, hc2 = st.columns([3, 1])
 with hc1:
+    _title     = "DEMO MODE" if is_demo else "LIVE MUSE MODE"
+    _title_col = "#A06EDC" if is_demo else "#00CC77"
     st.markdown(
-        '<h1 style="margin:0;font-size:26px;color:#FFFFFF;'
-        'font-family:\'DM Mono\',monospace;letter-spacing:0.05em">🧠 Brain Battery</h1>',
+        f'<h1 style="margin:0;font-size:36px;color:{_title_col};'
+        f'font-family:\'DM Mono\',monospace;letter-spacing:0.08em;font-weight:500">'
+        f'{_title}</h1>',
         unsafe_allow_html=True)
     st.markdown(
-        '<p style="color:#4B5563;font-size:13px;margin-top:2px">'
-        'Cognitive Workload Monitor — UNIVERSE Dataset (n=12 subjects, LOSO)</p>',
+        '<p style="color:#4B5563;font-size:12px;margin-top:4px;'
+        'font-family:\'DM Mono\',monospace;letter-spacing:0.1em">'
+        'UNIVERSE DATASET — 12 SUBJECTS — LOSO</p>',
         unsafe_allow_html=True)
 with hc2:
     if is_demo and st.session_state._labels_data is not None:
@@ -1339,12 +1667,12 @@ with hc2:
         st.markdown(
             f'<div style="text-align:right;margin-top:8px">'
             f'<span class="pill pill-dim">Subject {st.session_state.subject_idx+1}</span>&nbsp;'
-            f'<span class="pill pill-white">{n_lo}↓ {n_hi}↑</span></div>',
+            f'<span class="pill pill-white">{n_lo} low  {n_hi} high</span></div>',
             unsafe_allow_html=True)
 
 st.markdown("""
 <div class="research-banner">
-  <span style="color:#374151;font-size:10px;font-family:'DM Mono',monospace;
+  <span style="color:#6B7280;font-size:10px;font-family:'DM Mono',monospace;
                text-transform:uppercase;letter-spacing:0.12em">Core Research Claim</span><br>
   <span style="color:#8B949E;font-size:13px;font-family:'DM Sans',sans-serif">
     Spectral features generalize across subjects better than raw EEG or physiological signals —
@@ -1353,7 +1681,9 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-TABS = ["⚡ Live", "🏠 Summary", "📂 History"]
+TABS = ["Live"] if is_demo else ["Live", "Summary", "History"]
+if st.session_state.active_tab not in TABS:
+    st.session_state.active_tab = "Live"
 tc   = st.columns(len(TABS))
 for i, tab in enumerate(TABS):
     with tc[i]:
@@ -1371,7 +1701,6 @@ if st.session_state.app_mode == "🎧 Live — Muse headband":
     if not PYLSL_AVAILABLE:
         st.markdown("""
         <div class="conn-card">
-          <div style="font-size:52px;margin-bottom:14px">📡</div>
           <h3 style="color:#E05050;margin:0 0 8px 0;font-family:'DM Mono',monospace">
             pylsl Not Found</h3>
           <p style="color:#6B7280;font-size:13px;margin-bottom:16px">
@@ -1386,7 +1715,6 @@ if st.session_state.app_mode == "🎧 Live — Muse headband":
     if st.session_state.live_subpage == "setup":
         st.markdown("""
         <div class="conn-card">
-          <div style="font-size:52px;margin-bottom:8px">🎧</div>
           <h3 style="color:#FFFFFF;margin:0 0 4px 0;font-family:'DM Mono',monospace;
                      letter-spacing:0.04em">Muse Headset Setup</h3>
           <p style="color:#8B949E;font-size:13px;margin:0 0 22px 0">
@@ -1407,13 +1735,13 @@ if st.session_state.app_mode == "🎧 Live — Muse headband":
                       font-family:'DM Sans',sans-serif;margin:0 auto 24px auto;max-width:360px">
             <div><strong style="color:#FFFFFF">1.</strong> &nbsp;Put on the Muse headband.</div>
             <div><strong style="color:#FFFFFF">2.</strong> &nbsp;Open BlueMuse → Start Streaming.</div>
-            <div><strong style="color:#FFFFFF">3.</strong> &nbsp;Click 🔌 Connect below.</div>
+            <div><strong style="color:#FFFFFF">3.</strong> &nbsp;Click Connect below.</div>
           </div>
         </div>""", unsafe_allow_html=True)
 
         col_btn = st.columns([2, 1, 2])[1]
         with col_btn:
-            if st.button("🔌 Connect", type="primary",
+            if st.button("Connect", type="primary",
                          use_container_width=True, key="muse_connect_setup"):
                 streamer = MuseStreamer()
                 ok, msg  = streamer.connect(timeout=5.0)
@@ -1430,7 +1758,7 @@ if st.session_state.app_mode == "🎧 Live — Muse headband":
     stp_l, stp_c, stp_r = st.columns([3, 2, 3])
     with stp_c:
         setup_btn_type = "secondary" if st.session_state.muse_connected else "primary"
-        if st.button("🎧 Setup Muse Headset", type=setup_btn_type,
+        if st.button("Setup Muse Headset", type=setup_btn_type,
                      use_container_width=True, key="live_goto_setup"):
             st.session_state.live_subpage = "setup"
             st.rerun()
@@ -1438,53 +1766,82 @@ if st.session_state.app_mode == "🎧 Live — Muse headband":
     if st.session_state.muse_connected:
         stable = st.session_state.get("signal_stable", True)
         reason = st.session_state.get("signal_reason", "OK")
-        st.success("🎧 Muse connected — signal stable") if stable else st.warning(f"⚠️ {reason}")
+        st.success("Muse connected — signal stable") if stable else st.warning(f"Signal issue: {reason}")
     else:
-        st.info("🔌 Muse not connected — click **Setup Muse Headset** to begin streaming.")
+        st.info("Muse not connected — click **Setup Muse Headset** to begin streaming.")
 
 
 # ══════════════════════════════════════════════════════════════════════════════
 # 19. HISTORY TAB
 # ══════════════════════════════════════════════════════════════════════════════
-if st.session_state.active_tab == "📂 History":
+if st.session_state.active_tab == "History":
     records = HISTORY.load_recent(20)
-    st.markdown('<p class="bb-label">Session History (most recent first)</p>',
-                unsafe_allow_html=True)
-    hcol1, hcol2 = st.columns([2, 1])
-    with hcol1:
-        st.plotly_chart(make_history_chart(records), use_container_width=True, key="hist_chart")
-    with hcol2:
-        if records:
-            st.markdown('<div class="bb-card">', unsafe_allow_html=True)
-            for r in records[:8]:
-                wl     = r.get("mean_wl", r.get("mean_bw", 0))
-                col    = _wl_color(wl)
-                ts     = r.get("ts","")[:16].replace("T"," ")
-                subj   = r.get("subject", -1)
-                subj_s = f"S{subj+1}" if subj >= 0 else "Live"
-                acc    = r.get("accuracy", float("nan"))
-                acc_s  = f"{acc:.0f}%" if not (isinstance(acc, float) and np.isnan(acc)) else "—"
-                st.markdown(
-                    f'<div class="hist-row">'
-                    f'<span class="hist-ts">{ts}</span>'
-                    f'<span style="color:#6B7280;font-size:11px">{subj_s}</span>'
-                    f'<span style="color:{col};font-family:\'DM Mono\',monospace;font-size:12px">'
-                    f'{wl:.0f}% WL</span>'
-                    f'<span style="color:#6B7280;font-size:11px">{acc_s} acc</span>'
-                    f'</div>', unsafe_allow_html=True)
-            st.markdown('</div>', unsafe_allow_html=True)
-        else:
-            st.markdown(
-                '<div class="bb-card" style="text-align:center;color:#4B5563;padding:40px">'
-                'No sessions yet.<br>Run a demo to start logging.</div>',
-                unsafe_allow_html=True)
+    st.markdown(
+        '<p class="bb-desc" style="margin-bottom:16px">'
+        'A log of every session you\'ve run. Each row shows your average brain load '
+        'and how long you focused.</p>',
+        unsafe_allow_html=True)
+    st.plotly_chart(make_history_chart(records), use_container_width=True, key="hist_chart")
+    if records:
+        # Full-width table
+        rows_html = ""
+        for r in records[:20]:
+            wl     = r.get("mean_wl", r.get("mean_bw", 0))
+            fat    = r.get("mean_fat", 0)
+            col    = _wl_color(wl)
+            ts     = r.get("ts","")[:16].replace("T"," ")
+            subj   = r.get("subject", -1)
+            subj_s = f"S{subj+1}" if subj >= 0 else "Live"
+            acc    = r.get("accuracy", float("nan"))
+            acc_s  = f"{acc:.0f}%" if not (isinstance(acc, float) and np.isnan(acc)) else "—"
+            focus  = r.get("focus_minutes", 0)
+            rows_html += (
+                f'<div class="hist-row">'
+                f'<span class="hist-ts" style="min-width:140px">{ts}</span>'
+                f'<span style="color:#6B7280;font-size:11px;min-width:48px">{subj_s}</span>'
+                f'<span style="color:{col};font-family:\'DM Mono\',monospace;font-size:13px;'
+                f'min-width:70px;font-weight:600">{wl:.0f}%</span>'
+                f'<span style="color:#6B7280;font-size:11px;min-width:55px">'
+                f'{fat:.0f} tired</span>'
+                f'<span style="color:#6B7280;font-size:11px;min-width:65px">'
+                f'{focus:.1f} min focus</span>'
+                f'<span style="color:#6B7280;font-size:11px">{acc_s} acc</span>'
+                f'</div>'
+            )
+        # Column headers
+        header_html = (
+            '<div style="display:flex;align-items:center;gap:12px;padding:6px 14px;'
+            'border-bottom:1px solid rgba(255,255,255,0.08);margin-bottom:4px">'
+            '<span style="color:#374151;font-size:9px;font-family:\'DM Mono\',monospace;'
+            'text-transform:uppercase;letter-spacing:0.12em;min-width:140px">Time</span>'
+            '<span style="color:#374151;font-size:9px;font-family:\'DM Mono\',monospace;'
+            'text-transform:uppercase;letter-spacing:0.12em;min-width:48px">Mode</span>'
+            '<span style="color:#374151;font-size:9px;font-family:\'DM Mono\',monospace;'
+            'text-transform:uppercase;letter-spacing:0.12em;min-width:70px">Brain Load</span>'
+            '<span style="color:#374151;font-size:9px;font-family:\'DM Mono\',monospace;'
+            'text-transform:uppercase;letter-spacing:0.12em;min-width:55px">Tiredness</span>'
+            '<span style="color:#374151;font-size:9px;font-family:\'DM Mono\',monospace;'
+            'text-transform:uppercase;letter-spacing:0.12em;min-width:65px">Focus</span>'
+            '<span style="color:#374151;font-size:9px;font-family:\'DM Mono\',monospace;'
+            'text-transform:uppercase;letter-spacing:0.12em">Accuracy</span>'
+            '</div>'
+        )
+        st.markdown(
+            f'<div class="bb-card" style="padding:16px 10px">'
+            f'{header_html}{rows_html}</div>',
+            unsafe_allow_html=True)
+    else:
+        st.markdown(
+            '<div class="bb-card" style="text-align:center;color:#4B5563;padding:40px">'
+            'No sessions yet.<br>Run a demo to start logging.</div>',
+            unsafe_allow_html=True)
     st.stop()
 
 
 # ══════════════════════════════════════════════════════════════════════════════
 # 20. SUMMARY TAB
 # ══════════════════════════════════════════════════════════════════════════════
-if st.session_state.active_tab == "🏠 Summary":
+if st.session_state.active_tab == "Summary":
     records = HISTORY.load_recent(10)
     if records:
         mean_wl_all  = float(np.mean([r.get("mean_wl", r.get("mean_bw", 50)) for r in records]))
@@ -1494,11 +1851,16 @@ if st.session_state.active_tab == "🏠 Summary":
     else:
         mean_wl_all = mean_fat_all = total_focus = 0.0; n_sessions = 0
 
+    st.markdown(
+        '<p class="bb-desc" style="margin-bottom:16px">'
+        "Here's how your brain has performed across all sessions.</p>",
+        unsafe_allow_html=True)
+
     sc1, sc2, sc3, sc4 = st.columns(4)
-    sc1.metric("Sessions logged",    str(n_sessions))
-    sc2.metric("Avg workload",       f"{mean_wl_all:.0f}%")
-    sc3.metric("Avg fatigue index",  f"{mean_fat_all:.0f}/100")
-    sc4.metric("Total focus time",   f"{total_focus:.1f} min")
+    sc1.metric("Sessions logged",  str(n_sessions))
+    sc2.metric("Avg Brain Load",   f"{mean_wl_all:.0f}%")
+    sc3.metric("Avg Tiredness",    f"{mean_fat_all:.0f}/100")
+    sc4.metric("Total Focus Time", f"{total_focus:.1f} min")
 
     st.markdown('<div class="bb-divider"></div>', unsafe_allow_html=True)
 
@@ -1511,23 +1873,24 @@ if st.session_state.active_tab == "🏠 Summary":
         rm3.metric("Worst case",   "Subject 2: 27.5%",   "Fails zero-calibration")
         rm4.metric("This window",  f"{n_lo}↓ + {n_hi}↑","Workload rises at midpoint")
 
-    with st.expander("📖 What does the model measure?", expanded=False):
+    with st.expander("What does the model measure?", expanded=False):
         st.markdown("""
-**Cognitive Workload** — mental effort required by a task. Not emotional stress.
-```
-P(high CW) = softmax( workload_head( EEG ⊕ Physio ⊕ Freq ) )₁
-Workload  = 100 × P(high CW)   ← 0% rested, 100% maxed out
-Fatigue   = log(θ power) − log(α power)   [Klimesch 1999]
-```
-**Signal Weights** — which sensor the model relied on most.
-Spectral features generalize best: consistent across all 12 subjects.
+**Brain Load** measures how much mental effort your current task is demanding —
+not emotional stress. It goes from 0% (fully relaxed) to 100% (brain maxed out).
 
-**What it does NOT measure:** emotional stress, HRV, cortisol.
+**Tiredness** is a direct brainwave measure — as you tire, slow brain waves rise
+and alert brain waves fall. It's calculated from raw EEG, no AI involved.
 
-**Demo moment to watch:**
-Jaw clench → spectral weight drops → model automatically down-weights EEG.
-> *"Most systems give you a number. Ours tells you when not to trust it."*
+**Sensor Weights** show which data source the AI is relying on most. Frequency
+patterns tend to be the most consistent signal across different people.
         """)
+        with st.expander("See the math"):
+            st.code(
+                "P(high CW) = softmax( workload_head( EEG ⊕ Physio ⊕ Freq ) )₁\n"
+                "Brain Load = 100 × P(high CW)   ← 0% rested, 100% maxed out\n"
+                "Tiredness  = log(θ power) − log(α power)   [Klimesch 1999]\n"
+                "att = softmax( content × (quality + 0.1) / 3 )"
+            )
     st.stop()
 
 
@@ -1594,7 +1957,7 @@ def live_display():
         st.markdown(f"""
         <div class="bb-card-accent" style="margin-bottom:14px">
           <h2 style="color:#FFFFFF;margin-top:0;font-family:'DM Mono',monospace">
-            ✅ Run Complete — Subject {subj_num}</h2>
+            Run Complete — Subject {subj_num}</h2>
           <table class="metric-table">
             <tr style="border-bottom:1px solid rgba(255,255,255,0.06)">
               <td style="padding:7px 0;color:#4B5563;font-size:10px;text-transform:uppercase;
@@ -1640,7 +2003,7 @@ def live_display():
             '<p class="bb-desc">0% = fully rested. 100% = brain maxed out. '
             'Measures how much mental effort your current task is demanding.</p>',
             unsafe_allow_html=True)
-        with st.popover("🔬 Technical Details"):
+        with st.popover("Technical Details"):
             st.markdown("""
 **How it's calculated**
 ```
@@ -1668,7 +2031,7 @@ Threshold fixed at 0.5 in Demo mode; personalized via Welford algorithm in Live 
             '<p class="bb-desc">A direct brainwave measure of tiredness — no AI involved. '
             'As you tire, slow theta waves rise and alert alpha waves fall.</p>',
             unsafe_allow_html=True)
-        with st.popover("🔬 Technical Details"):
+        with st.popover("Technical Details"):
             st.markdown("""
 **Reference:** Klimesch (1999) *Brain Research Reviews* 29:169-195
 
@@ -1711,7 +2074,7 @@ Computed per-epoch from the raw EEG PSD, not from the model.
             'Spectral (frequency-band) features consistently generalize best '
             'across all subjects — watch this bar during a jaw clench.</p>',
             unsafe_allow_html=True)
-        with st.popover("🔬 Technical Details"):
+        with st.popover("Technical Details"):
             st.markdown("""
 **Signal quality index (Live mode)**
 Viola et al. (2009) *J Neurosci Methods* 182(1):15-26
@@ -1742,7 +2105,7 @@ lowest cross-subject variance of the three towers.
     ph_acc = st.empty()
 
     if not lite_mode:
-        with st.expander("📡 Raw sensor data", expanded=False):
+        with st.expander("Raw Sensor Data", expanded=False):
             wd1, wd2 = st.columns(2)
             with wd1:
                 st.markdown('<span class="bb-label">EEG — 4 channels</span>',
@@ -1825,7 +2188,7 @@ lowest cross-subject variance of the three towers.
     # ══════════════════════════════════════════════════════════════════════
     # UNIFIED SINGLE DYNAMIC BUTTON
     # ══════════════════════════════════════════════════════════════════════
-    btn_col, _ = st.columns([1, 6])
+    _, btn_col, _ = st.columns([2, 1, 2])
     with btn_col:
         if st.session_state._run_complete:
             if st.button("↺ Restart Run", type="primary", use_container_width=True):
@@ -1918,7 +2281,7 @@ lowest cross-subject variance of the three towers.
                 min(st.session_state.stable_count + 1, 99) if stable else 0)
             if st.session_state.stable_count < 4:
                 ph_signal.markdown(
-                    f'<span class="pill pill-orange">⚠ {reason}</span>',
+                    f'<span class="pill pill-orange">Signal issue: {reason}</span>',
                     unsafe_allow_html=True)
                 time.sleep(0.5); st.rerun(); return
 
