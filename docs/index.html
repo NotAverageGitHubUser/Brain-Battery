@@ -128,26 +128,6 @@
       display: flex; align-items: flex-end; gap: 64px;
     }
     .hero-left { flex: 1; min-width: 0; }
-    .hero-right {
-      width: 320px; flex-shrink: 0;
-      display: flex; flex-direction: column; gap: 8px;
-      padding-bottom: 4px;
-    }
-    .hero-right-photo {
-      border-radius: 20px; overflow: hidden;
-      border: 1px solid rgba(255,255,255,0.12);
-      box-shadow: 0 12px 48px rgba(0,0,0,0.7), 0 1px 0 rgba(255,255,255,0.06) inset;
-      aspect-ratio: 3/4;
-    }
-    .hero-right-photo img {
-      width: 100%; height: 100%; object-fit: cover; display: block;
-    }
-    .photo-credit {
-      font-family: var(--mono); font-size: 9px; letter-spacing: 0.08em;
-      color: rgba(75,85,99,0.9); text-align: right; line-height: 1.5;
-    }
-    .photo-credit a { color: rgba(75,85,99,0.9); text-decoration: none; }
-    .photo-credit a:hover { color: var(--muted); }
     .hero-bg-credit {
       position: absolute; bottom: 14px; left: 72px; z-index: 10;
       font-family: var(--mono); font-size: 9px; letter-spacing: 0.08em;
@@ -240,12 +220,36 @@
       transform: translateY(-2px);
     }
 
-    /* ══ WHAT IT MEASURES — 2×2 card grid ═══════════════════════════════ */
-    .metrics-grid {
+    /* ══ WHAT IT MEASURES — photo center, cards at four corners ═════════ */
+    .measures-layout {
       display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 16px;
+      grid-template-columns: 1fr 380px 1fr;
+      grid-template-rows: auto auto;
+      column-gap: 0;
+      row-gap: 20px;
     }
+    .measures-photo {
+      grid-column: 2;
+      grid-row: 1 / 3;
+      align-self: center;
+      position: relative;
+      z-index: 1;
+      border-radius: 20px;
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,0.12);
+      box-shadow: 0 12px 48px rgba(0,0,0,0.7), 0 1px 0 rgba(255,255,255,0.06) inset;
+      aspect-ratio: 3/4;
+    }
+    .measures-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .measures-photo-credit {
+      position: absolute; bottom: 8px; left: 0; right: 0; text-align: center;
+      font-family: var(--mono); font-size: 8px; letter-spacing: 0.06em;
+      color: rgba(75,85,99,0.7); pointer-events: none;
+    }
+    .measures-layout .metric-card:nth-child(2) { grid-column: 1; grid-row: 1; margin-right: -28px; position: relative; z-index: 2; }
+    .measures-layout .metric-card:nth-child(3) { grid-column: 3; grid-row: 1; margin-left: -28px;  position: relative; z-index: 2; }
+    .measures-layout .metric-card:nth-child(4) { grid-column: 1; grid-row: 2; margin-right: -28px; position: relative; z-index: 2; }
+    .measures-layout .metric-card:nth-child(5) { grid-column: 3; grid-row: 2; margin-left: -28px;  position: relative; z-index: 2; }
     .metric-card {
       background: rgba(30,35,41,0.60);
       border: 1px solid rgba(255,255,255,0.08);
@@ -432,11 +436,11 @@
       nav { padding: 0 24px; }
       .nav-links { display: none; }
       .hero-content { flex-direction: column; align-items: flex-start; padding: 0 28px 64px; gap: 36px; }
-      .hero-right { width: 100%; max-width: 340px; }
-      .hero-right-photo { aspect-ratio: 4/3; }
       .hero-bg-credit { left: 28px; }
       .section-wrap { padding: 72px 28px; }
-      .metrics-grid { grid-template-columns: 1fr; }
+      .measures-layout { grid-template-columns: 1fr; }
+      .measures-layout .measures-photo { grid-column: 1; grid-row: auto; margin: 0 auto; width: 220px; }
+      .measures-layout .metric-card:nth-child(n) { grid-column: 1; grid-row: auto; margin: 0; }
       .arch-cards { grid-template-columns: 1fr; }
       .shots-grid { grid-template-columns: 1fr; }
       .dataset-card { flex-direction: column; gap: 24px; }
@@ -499,16 +503,6 @@
       </div>
     </div>
 
-    <!-- Side photo: Sumaid pal Singh Bakshi on Unsplash -->
-    <div class="hero-right">
-      <div class="hero-right-photo">
-        <img src="assets/hero-side.jpg" alt="Neural interface circuit visualization" />
-      </div>
-      <p class="photo-credit">
-        Photo by <a href="https://unsplash.com/@sumaid" target="_blank">Sumaid pal Singh Bakshi</a>
-        on <a href="https://unsplash.com" target="_blank">Unsplash</a>
-      </p>
-    </div>
   </div>
 
   <!-- Background photo credit -->
@@ -534,7 +528,12 @@
       Cognitive workload is not emotional stress — different construct, different labels, different biomarkers.
     </p>
 
-    <div class="metrics-grid">
+    <div class="measures-layout">
+      <div class="measures-photo">
+        <img src="assets/hero-side.jpg" alt="Neural interface circuit visualization" />
+        <p class="measures-photo-credit">Sumaid pal Singh Bakshi · Unsplash</p>
+      </div>
+
       <div class="metric-card">
         <div class="metric-num metric-num-green">01 — Primary Metric</div>
         <div class="metric-title">Cognitive Workload</div>
@@ -578,7 +577,7 @@
         </div>
         <div class="metric-formula">σ heuristic per channel &nbsp;(Viola et al., 2009)</div>
       </div>
-    </div>
+    </div><!-- /.measures-layout -->
   </div>
 </section>
 
