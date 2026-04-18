@@ -1858,33 +1858,106 @@ if st.session_state.app_mode == "🎧 Live — Muse headband":
     # ── SETUP SUBPAGE ────────────────────────────────────────────────────
     if st.session_state.live_subpage == "setup":
         st.markdown("""
-        <div class="conn-card">
-          <h3 style="color:#FFFFFF;margin:0 0 4px 0;font-family:'DM Mono',monospace;
-                     letter-spacing:0.04em">Muse Headset Setup</h3>
-          <p style="color:#8B949E;font-size:13px;margin:0 0 22px 0">
-            Connect your Muse headband to stream 4-channel EEG in real time.</p>
-          <svg width="200" height="90" viewBox="0 0 200 90"
-               style="margin:4px auto 22px auto;display:block">
-            <ellipse cx="100" cy="48" rx="78" ry="30" fill="none"
-                     stroke="rgba(255,255,255,0.28)" stroke-width="2"/>
-            <circle cx="40"  cy="48" r="6" fill="#FFFFFF"/>
-            <circle cx="82"  cy="30" r="5" fill="#FFFFFF"/>
-            <circle cx="118" cy="30" r="5" fill="#FFFFFF"/>
-            <circle cx="160" cy="48" r="6" fill="#FFFFFF"/>
-            <text x="100" y="82" text-anchor="middle"
-                  fill="rgba(255,255,255,0.4)" font-family="DM Mono" font-size="10">
-              TP9 · AF7 · AF8 · TP10</text>
-          </svg>
-          <div style="text-align:left;color:#D1D5DB;font-size:13px;line-height:2;
-                      font-family:'DM Sans',sans-serif;margin:0 auto 24px auto;max-width:360px">
-            <div><strong style="color:#FFFFFF">1.</strong> &nbsp;Put on the Muse headband.</div>
-            <div><strong style="color:#FFFFFF">2.</strong> &nbsp;Open BlueMuse → Start Streaming.</div>
-            <div><strong style="color:#FFFFFF">3.</strong> &nbsp;Click Connect below.</div>
+        <div style="max-width:720px;margin:0 auto">
+          <div style="margin-bottom:28px">
+            <span style="font-family:'DM Mono',monospace;font-size:10px;
+                         letter-spacing:0.18em;text-transform:uppercase;
+                         color:#6B7280">Live Mode</span>
+            <h2 style="font-family:'DM Mono',monospace;font-size:26px;
+                       font-weight:500;color:#FFFFFF;margin:6px 0 8px 0;
+                       letter-spacing:0.02em">Muse Headset Setup</h2>
+            <p class="bb-desc">
+              Follow these steps to stream live EEG from your Muse headband into Brain Battery.
+              The entire process takes about 2 minutes on first setup.
+            </p>
           </div>
-        </div>""", unsafe_allow_html=True)
+        </div>
+        """, unsafe_allow_html=True)
 
-        col_btn = st.columns([2, 1, 2])[1]
-        with col_btn:
+        _steps = [
+            ("Hardware Requirements",
+             """Your Muse 2 or Muse S headband streams 4-channel EEG:
+             <strong style="color:#D1D5DB">TP9</strong> (left ear) &nbsp;·&nbsp;
+             <strong style="color:#D1D5DB">AF7</strong> (left forehead) &nbsp;·&nbsp;
+             <strong style="color:#D1D5DB">AF8</strong> (right forehead) &nbsp;·&nbsp;
+             <strong style="color:#D1D5DB">TP10</strong> (right ear).<br><br>
+             Note: Muse does not record physiological signals (heart rate, EDA).
+             Brain Battery uses <strong style="color:#D1D5DB">EEG only</strong> in live mode
+             — physio signals are available in Demo mode from the pre-recorded dataset."""),
+            ("Install BlueMuse",
+             """BlueMuse bridges your Muse headset to a Lab Streaming Layer (LSL) stream
+             that Brain Battery reads in real time. Requires <strong style="color:#D1D5DB">Windows 10 or 11</strong>
+             with Bluetooth.<br><br>
+             Download and install from:<br>
+             <code style="font-family:'DM Mono',monospace;font-size:12px;
+                          color:#00CC77;background:rgba(0,204,119,0.06);
+                          padding:2px 8px;border-radius:6px">
+               github.com/kowalej/BlueMuse
+             </code><br><br>
+             <strong style="color:#9CA3AF">macOS / other platforms:</strong>
+             Use the MindMonitor app (iOS/Android) with LSL export enabled instead of BlueMuse."""),
+            ("Pair your Muse via Bluetooth",
+             """Power on your Muse by holding the button until the LED blinks.<br><br>
+             Open <strong style="color:#D1D5DB">Windows Settings → Bluetooth & devices → Add device</strong>.
+             Select <strong style="color:#D1D5DB">Muse-XXXX</strong> from the list
+             (last 4 characters match the serial number on your headset).
+             Pairing takes about 10 seconds. You only need to do this once."""),
+            ("Start Streaming in BlueMuse",
+             """Open BlueMuse — your paired device should appear automatically.<br><br>
+             Click <strong style="color:#D1D5DB">Start Streaming</strong>.
+             Confirm the status line reads <strong style="color:#00CC77">LSL: Sending</strong>
+             before proceeding.<br><br>
+             Keep BlueMuse open and running in the background — closing it will stop the stream
+             and disconnect Brain Battery."""),
+            ("Connect in Brain Battery",
+             """Click <strong style="color:#D1D5DB">Connect</strong> below.
+             Brain Battery listens for an LSL EEG stream for up to 5 seconds.<br><br>
+             If connection fails: verify BlueMuse shows
+             <strong style="color:#00CC77">LSL: Sending</strong>,
+             then try again. On first run, Windows Firewall may prompt you to allow LSL —
+             click Allow."""),
+        ]
+
+        for i, (title, body) in enumerate(_steps, 1):
+            st.markdown(f"""
+            <div class="bb-card" style="max-width:720px;margin:0 auto 12px auto">
+              <div style="display:flex;gap:20px;align-items:flex-start">
+                <div style="font-family:'DM Mono',monospace;font-size:26px;
+                            font-weight:300;color:#374151;min-width:36px;
+                            line-height:1.1;padding-top:2px">{i:02d}</div>
+                <div style="flex:1">
+                  <div style="font-family:'DM Mono',monospace;font-size:13px;
+                              font-weight:500;color:#FFFFFF;margin-bottom:8px;
+                              letter-spacing:0.03em">{title}</div>
+                  <div class="bb-desc" style="line-height:1.75">{body}</div>
+                </div>
+              </div>
+            </div>""", unsafe_allow_html=True)
+
+        st.markdown("""
+        <div style="max-width:720px;margin:24px auto 0 auto">
+          <svg width="200" height="72" viewBox="0 0 200 72"
+               style="display:block;margin:0 auto 20px auto;opacity:0.35">
+            <ellipse cx="100" cy="36" rx="78" ry="24" fill="none"
+                     stroke="rgba(255,255,255,0.5)" stroke-width="1.5"/>
+            <circle cx="40"  cy="36" r="5" fill="#FFFFFF"/>
+            <circle cx="82"  cy="22" r="4" fill="#FFFFFF"/>
+            <circle cx="118" cy="22" r="4" fill="#FFFFFF"/>
+            <circle cx="160" cy="36" r="5" fill="#FFFFFF"/>
+            <text x="40"  y="56" text-anchor="middle" fill="rgba(255,255,255,0.4)"
+                  font-family="DM Mono" font-size="8">TP9</text>
+            <text x="82"  y="14" text-anchor="middle" fill="rgba(255,255,255,0.4)"
+                  font-family="DM Mono" font-size="8">AF7</text>
+            <text x="118" y="14" text-anchor="middle" fill="rgba(255,255,255,0.4)"
+                  font-family="DM Mono" font-size="8">AF8</text>
+            <text x="160" y="56" text-anchor="middle" fill="rgba(255,255,255,0.4)"
+                  font-family="DM Mono" font-size="8">TP10</text>
+          </svg>
+        </div>
+        """, unsafe_allow_html=True)
+
+        _c1, _c2, _c3 = st.columns([2, 1, 2])
+        with _c2:
             if st.button("Connect", type="primary",
                          use_container_width=True, key="muse_connect_setup"):
                 streamer = MuseStreamer()
@@ -1896,6 +1969,13 @@ if st.session_state.app_mode == "🎧 Live — Muse headband":
                     st.success(msg); st.rerun()
                 else:
                     st.error(msg)
+
+        _b1, _b2, _b3 = st.columns([2, 1, 2])
+        with _b2:
+            if st.button("← Back to Live Mode", use_container_width=True,
+                         key="muse_back_to_overview"):
+                st.session_state.live_subpage = "overview"
+                st.rerun()
         st.stop()
 
     # ── OVERVIEW SUBPAGE ─────────────────────────────────────────────────
