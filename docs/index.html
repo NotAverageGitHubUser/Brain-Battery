@@ -79,80 +79,110 @@
     }
     .btn-outline:hover { border-color: rgba(255,255,255,0.35); }
 
-    /* ══ HERO — full-viewport photo ══════════════════════════════════════ */
+    /* ══ HERO ════════════════════════════════════════════════════════════ */
     #hero {
       position: relative;
       min-height: 100vh;
       display: flex;
-      flex-direction: column;
-      justify-content: flex-end;
+      align-items: flex-end;
       overflow: hidden;
     }
     .hero-photo {
       position: absolute; inset: 0;
-      background: #050709;          /* fallback if image not loaded */
+      background: #050709;
     }
-    /* User: drop your brain/BCI photo at docs/assets/hero.jpg to activate this */
     .hero-photo img {
       width: 100%; height: 100%;
-      object-fit: cover; object-position: center 30%;
-      display: block;
-      opacity: 0.55;
+      object-fit: cover; object-position: center 40%;
+      display: block; opacity: 0.5;
     }
-    /* Deep gradient overlay — same feel as the app's dark background */
     .hero-photo::after {
-      content: '';
-      position: absolute; inset: 0;
+      content: ''; position: absolute; inset: 0;
       background:
         linear-gradient(to bottom,
-          rgba(10,12,18,0.3) 0%,
-          rgba(10,12,18,0.1) 40%,
-          rgba(10,12,18,0.85) 75%,
+          rgba(10,12,18,0.55) 0%,
+          rgba(10,12,18,0.25) 35%,
+          rgba(10,12,18,0.80) 70%,
           rgba(10,12,18,1)   100%),
-        radial-gradient(ellipse 80% 60% at 20% 10%, rgba(0,204,119,0.08) 0%, transparent 60%),
-        radial-gradient(ellipse 60% 50% at 80% 80%, rgba(160,110,220,0.1) 0%, transparent 55%);
+        radial-gradient(ellipse 70% 50% at 15% 15%, rgba(0,204,119,0.07) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 50% at 85% 85%, rgba(160,110,220,0.09) 0%, transparent 55%);
     }
-    /* Animated EEG traces over the photo */
+    /* Animated EEG traces */
     .hero-eeg-svg {
       position: absolute; bottom: 0; left: 0; right: 0;
-      height: 200px; z-index: 2; opacity: 0.22; pointer-events: none;
+      height: 200px; z-index: 2; opacity: 0.2; pointer-events: none;
     }
     .eeg-path {
-      stroke-dasharray: 3000;
-      stroke-dashoffset: 3000;
+      stroke-dasharray: 3000; stroke-dashoffset: 3000;
       animation: eegDraw 4s cubic-bezier(0.4,0,0.2,1) forwards;
     }
     .eeg-path:nth-child(2) { animation-delay: 0.5s; }
     .eeg-path:nth-child(3) { animation-delay: 1s; }
-    .eeg-path:nth-child(4) { animation-delay: 1.5s; }
     @keyframes eegDraw { to { stroke-dashoffset: 0; } }
 
+    /* Two-column hero content */
     .hero-content {
       position: relative; z-index: 10;
-      padding: 0 72px 80px;
-      max-width: 1100px;
+      width: 100%; max-width: 1200px; margin: 0 auto;
+      padding: 0 72px 72px;
+      display: flex; align-items: flex-end; gap: 64px;
     }
+    .hero-left { flex: 1; min-width: 0; }
+    .hero-right {
+      width: 320px; flex-shrink: 0;
+      display: flex; flex-direction: column; gap: 8px;
+      padding-bottom: 4px;
+    }
+    .hero-right-photo {
+      border-radius: 20px; overflow: hidden;
+      border: 1px solid rgba(255,255,255,0.12);
+      box-shadow: 0 12px 48px rgba(0,0,0,0.7), 0 1px 0 rgba(255,255,255,0.06) inset;
+      aspect-ratio: 3/4;
+    }
+    .hero-right-photo img {
+      width: 100%; height: 100%; object-fit: cover; display: block;
+    }
+    .photo-credit {
+      font-family: var(--mono); font-size: 9px; letter-spacing: 0.08em;
+      color: rgba(75,85,99,0.9); text-align: right; line-height: 1.5;
+    }
+    .photo-credit a { color: rgba(75,85,99,0.9); text-decoration: none; }
+    .photo-credit a:hover { color: var(--muted); }
+    .hero-bg-credit {
+      position: absolute; bottom: 14px; left: 72px; z-index: 10;
+      font-family: var(--mono); font-size: 9px; letter-spacing: 0.08em;
+      color: rgba(55,65,81,0.7);
+    }
+    .hero-bg-credit a { color: rgba(55,65,81,0.7); text-decoration: none; }
+    .hero-bg-credit a:hover { color: var(--dim); }
+
     .hero-eyebrow {
       font-family: var(--mono); font-size: 11px;
       letter-spacing: 0.2em; text-transform: uppercase;
-      color: var(--green); margin-bottom: 20px;
+      color: var(--green); margin-bottom: 18px;
       display: flex; align-items: center; gap: 12px;
       animation: fadeUp 0.8s ease both;
     }
     .hero-eyebrow::before {
-      content: ''; width: 32px; height: 1px; background: var(--green); display: inline-block;
+      content: ''; width: 28px; height: 1px; background: var(--green); display: inline-block;
     }
     h1 {
       font-family: var(--mono);
-      font-size: clamp(44px, 6.5vw, 84px);
+      font-size: clamp(40px, 6vw, 76px);
       font-weight: 400; line-height: 1.04; letter-spacing: -0.01em;
-      color: var(--white); margin-bottom: 22px;
+      color: var(--white); margin-bottom: 12px;
       animation: fadeUp 0.8s 0.1s ease both;
     }
-    h1 em { color: var(--green); font-style: normal; }
+    .hero-tagline {
+      font-family: var(--mono);
+      font-size: clamp(16px, 2.2vw, 24px);
+      font-weight: 300; color: rgba(229,231,235,0.55);
+      letter-spacing: 0.02em; margin-bottom: 24px;
+      animation: fadeUp 0.8s 0.15s ease both;
+    }
     .hero-sub {
-      font-size: 17px; color: rgba(229,231,235,0.7);
-      max-width: 540px; line-height: 1.75; margin-bottom: 36px;
+      font-size: 15px; color: rgba(229,231,235,0.55);
+      max-width: 500px; line-height: 1.8; margin-bottom: 36px;
       animation: fadeUp 0.8s 0.2s ease both;
     }
     .hero-actions {
@@ -160,7 +190,7 @@
       animation: fadeUp 0.8s 0.3s ease both;
     }
     .hero-scroll-hint {
-      position: absolute; bottom: 28px; left: 50%; transform: translateX(-50%);
+      position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
       z-index: 10; display: flex; flex-direction: column; align-items: center; gap: 6px;
       animation: fadeIn 1.5s 1.5s ease both;
     }
@@ -169,7 +199,8 @@
       letter-spacing: 0.2em; text-transform: uppercase;
     }
     .scroll-arrow {
-      width: 1px; height: 40px; background: linear-gradient(to bottom, var(--dim), transparent);
+      width: 1px; height: 36px;
+      background: linear-gradient(to bottom, var(--dim), transparent);
       animation: scrollPulse 2s ease-in-out infinite;
     }
     @keyframes scrollPulse { 0%,100%{opacity:0.3} 50%{opacity:0.8} }
@@ -209,86 +240,50 @@
       transform: translateY(-2px);
     }
 
-    /* ══ WHAT IT MEASURES — vertical with photos ════════════════════════ */
-    .measures-list { display: flex; flex-direction: column; gap: 0; }
-    .measure-row {
+    /* ══ WHAT IT MEASURES — 2×2 card grid ═══════════════════════════════ */
+    .metrics-grid {
       display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 40px;
-      align-items: center;
-      padding: 56px 0;
-      border-bottom: 1px solid rgba(255,255,255,0.05);
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px;
     }
-    .measure-row:last-child { border-bottom: none; }
-    .measure-row.flip { direction: rtl; }
-    .measure-row.flip > * { direction: ltr; }
-    .measure-photo {
-      border-radius: 20px;
-      overflow: hidden;
-      aspect-ratio: 4/3;
-      background: rgba(20,23,30,0.8);
-      border: 1px solid rgba(255,255,255,0.07);
-      position: relative;
-      display: flex; align-items: center; justify-content: center;
+    .metric-card {
+      background: rgba(30,35,41,0.60);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-top: 1px solid rgba(255,255,255,0.13);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-radius: 24px;
+      padding: 28px 28px 24px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.3), 0 1px 0 rgba(255,255,255,0.04) inset;
+      display: flex; flex-direction: column; gap: 12px;
+      transition: border-color 0.25s, transform 0.25s;
     }
-    .measure-photo img {
-      width: 100%; height: 100%;
-      object-fit: cover; display: block;
+    .metric-card:hover {
+      border-color: rgba(255,255,255,0.16);
+      transform: translateY(-2px);
     }
-    /* Placeholder shown when no image is set */
-    .measure-photo .photo-placeholder {
-      position: absolute; inset: 0;
-      display: flex; flex-direction: column;
-      align-items: center; justify-content: center; gap: 10px;
-    }
-    .measure-photo .photo-placeholder .ph-icon {
-      font-size: 40px; opacity: 0.25;
-    }
-    .measure-photo .photo-placeholder .ph-label {
-      font-family: var(--mono); font-size: 10px; letter-spacing: 0.14em;
-      color: var(--dim); text-transform: uppercase;
-    }
-    /* Gradient overlay on photos */
-    .measure-photo::after {
-      content: ''; position: absolute; inset: 0;
-      background: linear-gradient(135deg,
-        rgba(10,12,18,0.2) 0%, rgba(10,12,18,0.4) 100%);
-      border-radius: 20px;
-      pointer-events: none;
-    }
-    .measure-text { display: flex; flex-direction: column; gap: 16px; }
-    .measure-num {
-      font-family: var(--mono); font-size: 11px; letter-spacing: 0.18em;
+    .metric-num {
+      font-family: var(--mono); font-size: 10px; letter-spacing: 0.2em;
       text-transform: uppercase;
     }
-    .measure-num-green  { color: var(--green); }
-    .measure-num-orange { color: var(--orange); }
-    .measure-num-purple { color: var(--purple); }
-    .measure-num-blue   { color: #5B9CF6; }
-    .measure-title {
-      font-family: var(--mono); font-size: 22px; font-weight: 500;
+    .metric-num-green  { color: var(--green); }
+    .metric-num-orange { color: var(--orange); }
+    .metric-num-purple { color: var(--purple); }
+    .metric-num-blue   { color: #5B9CF6; }
+    .metric-title {
+      font-family: var(--mono); font-size: 19px; font-weight: 500;
       color: var(--white); letter-spacing: 0.02em; line-height: 1.2;
     }
-    .measure-body {
-      font-size: 14px; color: var(--muted); line-height: 1.8; max-width: 440px;
+    .metric-body {
+      font-size: 13px; color: var(--muted); line-height: 1.8; flex: 1;
     }
-    .measure-formula {
-      font-family: var(--mono); font-size: 12px; color: var(--dim);
-      background: rgba(20,23,30,0.8);
+    .metric-formula {
+      font-family: var(--mono); font-size: 11px; color: var(--dim);
+      background: rgba(13,15,20,0.8);
       border: 1px solid rgba(255,255,255,0.06);
-      border-radius: 10px; padding: 10px 14px;
-      display: inline-block;
+      border-radius: 8px; padding: 8px 12px;
+      display: inline-block; margin-top: 4px;
     }
-    .measure-chip {
-      display: inline-flex; align-items: center; gap: 6px;
-      padding: 3px 12px; border-radius: 100px;
-      font-family: var(--mono); font-size: 10px;
-      letter-spacing: 0.08em; border: 1px solid;
-    }
-    .chip-green  { color: var(--green);  border-color: rgba(0,204,119,0.3);  background: rgba(0,204,119,0.06); }
-    .chip-orange { color: var(--orange); border-color: rgba(224,144,0,0.3);  background: rgba(224,144,0,0.06); }
-    .chip-purple { color: var(--purple); border-color: rgba(160,110,220,0.3); background: rgba(160,110,220,0.06); }
-    .chip-blue   { color: #5B9CF6;       border-color: rgba(91,156,246,0.3); background: rgba(91,156,246,0.06); }
 
     /* ══ ARCHITECTURE ═════════════════════════════════════════════════════ */
     .arch-block {
@@ -436,10 +431,12 @@
     @media (max-width: 900px) {
       nav { padding: 0 24px; }
       .nav-links { display: none; }
-      .hero-content { padding: 0 28px 64px; }
+      .hero-content { flex-direction: column; align-items: flex-start; padding: 0 28px 64px; gap: 36px; }
+      .hero-right { width: 100%; max-width: 340px; }
+      .hero-right-photo { aspect-ratio: 4/3; }
+      .hero-bg-credit { left: 28px; }
       .section-wrap { padding: 72px 28px; }
-      .measure-row { grid-template-columns: 1fr; gap: 28px; }
-      .measure-row.flip { direction: ltr; }
+      .metrics-grid { grid-template-columns: 1fr; }
       .arch-cards { grid-template-columns: 1fr; }
       .shots-grid { grid-template-columns: 1fr; }
       .dataset-card { flex-direction: column; gap: 24px; }
@@ -467,61 +464,14 @@
   </div>
 </nav>
 
-<!-- ══ HERO — full-viewport brain/BCI photo ═══════════════════════════════ -->
+<!-- ══ HERO ═════════════════════════════════════════════════════════════════ -->
 <section id="hero">
+  <!-- Background photo: Parker Nate on Unsplash -->
   <div class="hero-photo">
-    <!--
-      ADD YOUR HERO IMAGE:
-      1. Save a brain / BCI / EEG headset photo to  docs/assets/hero.jpg
-      2. Uncomment the line below
-    -->
-    <!-- <img src="assets/hero.jpg" alt="Brain-computer interface and EEG visualization" /> -->
-
-    <!-- CSS fallback visible until you add the photo -->
-    <div style="position:absolute;inset:0;background:
-      radial-gradient(ellipse 120% 80% at 60% 30%, rgba(160,110,220,0.15) 0%, transparent 55%),
-      radial-gradient(ellipse 80%  60% at 20% 80%, rgba(0,204,119,0.10)  0%, transparent 50%),
-      #050709;"></div>
-
-    <!-- Neural network node illustration -->
-    <svg style="position:absolute;inset:0;width:100%;height:100%;opacity:0.12" viewBox="0 0 1200 700" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
-      <!-- connection lines -->
-      <line x1="300" y1="180" x2="560" y2="280" stroke="#A06EDC" stroke-width="0.8"/>
-      <line x1="300" y1="180" x2="560" y2="180" stroke="#A06EDC" stroke-width="0.8"/>
-      <line x1="300" y1="350" x2="560" y2="280" stroke="#A06EDC" stroke-width="0.8"/>
-      <line x1="300" y1="350" x2="560" y2="380" stroke="#A06EDC" stroke-width="0.8"/>
-      <line x1="300" y1="500" x2="560" y2="380" stroke="#A06EDC" stroke-width="0.8"/>
-      <line x1="300" y1="500" x2="560" y2="480" stroke="#A06EDC" stroke-width="0.8"/>
-      <line x1="560" y1="180" x2="820" y2="220" stroke="#00CC77" stroke-width="0.8"/>
-      <line x1="560" y1="280" x2="820" y2="220" stroke="#00CC77" stroke-width="0.8"/>
-      <line x1="560" y1="280" x2="820" y2="350" stroke="#00CC77" stroke-width="0.8"/>
-      <line x1="560" y1="380" x2="820" y2="350" stroke="#00CC77" stroke-width="0.8"/>
-      <line x1="560" y1="380" x2="820" y2="460" stroke="#00CC77" stroke-width="0.8"/>
-      <line x1="560" y1="480" x2="820" y2="460" stroke="#00CC77" stroke-width="0.8"/>
-      <line x1="820" y1="220" x2="1020" y2="330" stroke="#E09000" stroke-width="1.2"/>
-      <line x1="820" y1="350" x2="1020" y2="330" stroke="#E09000" stroke-width="1.2"/>
-      <line x1="820" y1="460" x2="1020" y2="330" stroke="#E09000" stroke-width="1.2"/>
-      <!-- nodes -->
-      <circle cx="300"  cy="180" r="5" fill="#A06EDC"/>
-      <circle cx="300"  cy="350" r="5" fill="#A06EDC"/>
-      <circle cx="300"  cy="500" r="5" fill="#A06EDC"/>
-      <circle cx="560"  cy="180" r="5" fill="#6B7280"/>
-      <circle cx="560"  cy="280" r="5" fill="#6B7280"/>
-      <circle cx="560"  cy="380" r="5" fill="#6B7280"/>
-      <circle cx="560"  cy="480" r="5" fill="#6B7280"/>
-      <circle cx="820"  cy="220" r="5" fill="#00CC77"/>
-      <circle cx="820"  cy="350" r="5" fill="#00CC77"/>
-      <circle cx="820"  cy="460" r="5" fill="#00CC77"/>
-      <circle cx="1020" cy="330" r="8" fill="#E09000"/>
-      <!-- labels -->
-      <text x="260" y="175"  font-family="DM Mono" font-size="10" fill="#A06EDC" opacity="0.7">EEG</text>
-      <text x="246" y="345"  font-family="DM Mono" font-size="10" fill="#A06EDC" opacity="0.7">Physio</text>
-      <text x="246" y="495"  font-family="DM Mono" font-size="10" fill="#A06EDC" opacity="0.7">Spectral</text>
-      <text x="1034" y="334" font-family="DM Mono" font-size="10" fill="#E09000" opacity="0.7">CW</text>
-    </svg>
+    <img src="assets/hero-bg.jpg" alt="Brain on circuit board — neural interface visualization" />
   </div>
 
-  <!-- EEG traces at the bottom of the hero -->
+  <!-- EEG traces overlay -->
   <svg class="hero-eeg-svg" viewBox="0 0 1440 200" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
     <path class="eeg-path" d="M0 120 L80 120 L100 90 L120 150 L135 65 L150 175 L165 120 L280 120 L295 105 L310 135 L325 85 L340 155 L355 120 L460 120 L475 100 L490 140 L505 75 L520 165 L535 120 L640 120 L655 108 L670 132 L685 88 L700 152 L715 120 L820 120 L835 102 L850 138 L865 78 L880 162 L895 120 L1000 120 L1015 106 L1030 134 L1045 82 L1060 158 L1075 120 L1180 120 L1195 104 L1210 136 L1225 80 L1240 160 L1255 120 L1440 120"
       stroke="#00CC77" stroke-width="1.5" fill="none"/>
@@ -531,19 +481,40 @@
       stroke="#E09000" stroke-width="1" fill="none" opacity="0.7"/>
   </svg>
 
+  <!-- Two-column content: left = text, right = side photo -->
   <div class="hero-content">
-    <div class="hero-eyebrow">Open Source · EEG · Deep Learning · BCI</div>
-    <h1>Real-time<br><em>Cognitive Load</em><br>Monitor</h1>
-    <p class="hero-sub">
-      Measures cognitive workload, mental fatigue, and focus streaks in real time using EEG signals —
-      powered by a custom multimodal neural network trained on the UNIVERSE dataset (24 subjects, LOSO).
-    </p>
-    <div class="hero-actions">
-      <a class="btn btn-green"   href="https://github.com/NotAverageGitHubUser/Brain-Battery" target="_blank">View on GitHub</a>
-      <a class="btn btn-purple"  href="https://www.kaggle.com/datasets/brandon19834/universe-merged-withzero-noasr" target="_blank">Get Dataset</a>
-      <a class="btn btn-outline" href="#get-started">Get Started ↓</a>
+    <div class="hero-left">
+      <div class="hero-eyebrow">Open Source · EEG · Deep Learning · BCI</div>
+      <h1>Brain<br>Battery</h1>
+      <p class="hero-tagline">Reading your brain's internal state</p>
+      <p class="hero-sub">
+        Measures cognitive workload, mental fatigue, and focus streaks in real time
+        using EEG signals — powered by a custom multimodal neural network trained on
+        the UNIVERSE dataset (24 subjects, LOSO).
+      </p>
+      <div class="hero-actions">
+        <a class="btn btn-green"   href="https://github.com/NotAverageGitHubUser/Brain-Battery" target="_blank">View on GitHub</a>
+        <a class="btn btn-purple"  href="https://www.kaggle.com/datasets/brandon19834/universe-merged-withzero-noasr" target="_blank">Get Dataset</a>
+        <a class="btn btn-outline" href="#get-started">Get Started ↓</a>
+      </div>
+    </div>
+
+    <!-- Side photo: Sumaid pal Singh Bakshi on Unsplash -->
+    <div class="hero-right">
+      <div class="hero-right-photo">
+        <img src="assets/hero-side.jpg" alt="Neural interface circuit visualization" />
+      </div>
+      <p class="photo-credit">
+        Photo by <a href="https://unsplash.com/@sumaid" target="_blank">Sumaid pal Singh Bakshi</a>
+        on <a href="https://unsplash.com" target="_blank">Unsplash</a>
+      </p>
     </div>
   </div>
+
+  <!-- Background photo credit -->
+  <p class="hero-bg-credit">
+    Background: <a href="https://unsplash.com/@parkernate" target="_blank">Parker Nate</a> on Unsplash
+  </p>
 
   <div class="hero-scroll-hint">
     <div class="scroll-arrow"></div>
@@ -553,7 +524,7 @@
 
 <div class="full-divider"></div>
 
-<!-- ══ WHAT IT MEASURES — vertical with photos ════════════════════════════ -->
+<!-- ══ WHAT IT MEASURES ════════════════════════════════════════════════════ -->
 <section id="measures">
   <div class="section-wrap">
     <span class="section-label">Metrics</span>
@@ -563,149 +534,50 @@
       Cognitive workload is not emotional stress — different construct, different labels, different biomarkers.
     </p>
 
-    <div class="measures-list">
-
-      <!-- 01 — Cognitive Workload -->
-      <div class="measure-row">
-        <div class="measure-photo">
-          <!--
-            ADD PHOTO: docs/assets/measure-workload.jpg
-            Suggested: brain scan, fMRI, or person doing cognitive task
-            Uncomment: <img src="assets/measure-workload.jpg" alt="Cognitive workload" />
-          -->
-          <svg style="position:absolute;inset:0;width:100%;height:100%;opacity:0.15" viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg">
-            <circle cx="200" cy="150" r="90" fill="none" stroke="#00CC77" stroke-width="1"/>
-            <circle cx="200" cy="150" r="60" fill="none" stroke="#00CC77" stroke-width="0.8" opacity="0.6"/>
-            <circle cx="200" cy="150" r="30" fill="rgba(0,204,119,0.08)" stroke="#00CC77" stroke-width="1.5"/>
-            <line x1="110" y1="150" x2="290" y2="150" stroke="#00CC77" stroke-width="0.5" opacity="0.4"/>
-            <line x1="200" y1="60"  x2="200" y2="240" stroke="#00CC77" stroke-width="0.5" opacity="0.4"/>
-          </svg>
-          <div class="photo-placeholder">
-            <div class="ph-icon">🧠</div>
-            <div class="ph-label">Add brain scan photo</div>
-          </div>
-          <div style="position:absolute;bottom:16px;left:16px;z-index:5">
-            <span class="measure-chip chip-green">Neural Network</span>
-          </div>
+    <div class="metrics-grid">
+      <div class="metric-card">
+        <div class="metric-num metric-num-green">01 — Primary Metric</div>
+        <div class="metric-title">Cognitive Workload</div>
+        <div class="metric-body">
+          Probability of high mental demand, estimated by a three-tower multimodal neural network
+          fusing EEG, physiological signals, and spectral features. Trained on NASA Task Load Index
+          labels with Leave-One-Subject-Out cross-validation across 24 subjects.
         </div>
-        <div class="measure-text">
-          <div class="measure-num measure-num-green">01 — Primary Metric</div>
-          <div class="measure-title">Cognitive<br>Workload</div>
-          <div class="measure-body">
-            Probability of high mental demand, estimated by a three-tower multimodal neural network
-            fusing EEG, physiological signals, and spectral features. Binary classification trained
-            on NASA Task Load Index labels using Leave-One-Subject-Out cross-validation across 24 subjects.
-          </div>
-          <div class="measure-formula">P(high CW) = softmax(workload_head(EEG ⊕ Physio ⊕ Freq))₁</div>
-        </div>
+        <div class="metric-formula">P(high CW) = softmax(workload_head(EEG ⊕ Physio ⊕ Freq))₁</div>
       </div>
 
-      <!-- 02 — Mental Fatigue -->
-      <div class="measure-row flip">
-        <div class="measure-photo">
-          <!--
-            ADD PHOTO: docs/assets/measure-fatigue.jpg
-            Suggested: EEG waveform visualization, spectral plot, or tired researcher
-            Uncomment: <img src="assets/measure-fatigue.jpg" alt="Mental fatigue EEG" />
-          -->
-          <svg style="position:absolute;inset:0;width:100%;height:100%;opacity:0.15" viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg">
-            <path d="M20 150 L60 150 L75 100 L90 200 L100 80 L115 220 L130 150 L180 150 L195 120 L210 180 L225 95 L240 205 L255 150 L300 150 L315 115 L330 185 L345 92 L360 208 L375 150 L400 150" stroke="#E09000" stroke-width="2" fill="none"/>
-            <path d="M20 200 L60 200 L72 178 L84 222 L93 162 L102 238 L111 200 L155 200 L167 184 L179 216 L188 168 L197 232 L206 200 L250 200" stroke="#E09000" stroke-width="1.5" fill="none" opacity="0.5"/>
-          </svg>
-          <div class="photo-placeholder">
-            <div class="ph-icon">〜</div>
-            <div class="ph-label">Add EEG waveform photo</div>
-          </div>
-          <div style="position:absolute;bottom:16px;left:16px;z-index:5">
-            <span class="measure-chip chip-orange">EEG Spectral</span>
-          </div>
+      <div class="metric-card">
+        <div class="metric-num metric-num-orange">02 — Spectral Ratio</div>
+        <div class="metric-title">Mental Fatigue</div>
+        <div class="metric-body">
+          EEG theta-to-alpha power ratio. Rising theta (4–8 Hz) relative to alpha (8–13 Hz)
+          indicates cognitive fatigue building over time. Pure signal processing — no model
+          involved. Validated across decades of neuroscience literature.
         </div>
-        <div class="measure-text">
-          <div class="measure-num measure-num-orange">02 — Spectral Ratio</div>
-          <div class="measure-title">Mental<br>Fatigue</div>
-          <div class="measure-body">
-            EEG theta-to-alpha power ratio. Rising theta (4–8 Hz) relative to alpha (8–13 Hz)
-            indicates cognitive fatigue building up over time. Pure signal processing —
-            no model involved. Validated across decades of neuroscience literature.
-          </div>
-          <div class="measure-formula">log θ_power − log α_power &nbsp;(Klimesch, 1999)</div>
-        </div>
+        <div class="metric-formula">log θ_power − log α_power &nbsp;(Klimesch, 1999)</div>
       </div>
 
-      <!-- 03 — Focus Streak -->
-      <div class="measure-row">
-        <div class="measure-photo">
-          <!--
-            ADD PHOTO: docs/assets/measure-focus.jpg
-            Suggested: person in deep focus, flow state, or timer visualization
-            Uncomment: <img src="assets/measure-focus.jpg" alt="Focus streak timer" />
-          -->
-          <svg style="position:absolute;inset:0;width:100%;height:100%;opacity:0.15" viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg">
-            <rect x="60"  y="200" width="30" height="60"  fill="#A06EDC" rx="4"/>
-            <rect x="110" y="165" width="30" height="95"  fill="#A06EDC" rx="4"/>
-            <rect x="160" y="140" width="30" height="120" fill="#A06EDC" rx="4"/>
-            <rect x="210" y="110" width="30" height="150" fill="#A06EDC" rx="4"/>
-            <rect x="260" y="80"  width="30" height="180" fill="#A06EDC" rx="4"/>
-            <rect x="310" y="55"  width="30" height="205" fill="#A06EDC" rx="4"/>
-          </svg>
-          <div class="photo-placeholder">
-            <div class="ph-icon">◈</div>
-            <div class="ph-label">Add focus / flow photo</div>
-          </div>
-          <div style="position:absolute;bottom:16px;left:16px;z-index:5">
-            <span class="measure-chip chip-purple">3-Window Grace</span>
-          </div>
+      <div class="metric-card">
+        <div class="metric-num metric-num-purple">03 — Sustained Attention</div>
+        <div class="metric-title">Focus Streak</div>
+        <div class="metric-body">
+          Timer tracking continuous low-workload windows. Resistant to momentary spikes — the
+          streak only resets after three consecutive high-load windows, preventing false
+          interruptions from brief task transitions.
         </div>
-        <div class="measure-text">
-          <div class="measure-num measure-num-purple">03 — Sustained Attention</div>
-          <div class="measure-title">Focus<br>Streak</div>
-          <div class="measure-body">
-            Timer tracking continuous low-workload windows. Resistant to momentary spikes — the
-            streak only resets after three consecutive high-load windows, preventing false
-            interruptions from brief task transitions.
-          </div>
-          <div class="measure-formula">Reset threshold: 3 consecutive high-CW windows</div>
-        </div>
+        <div class="metric-formula">Reset threshold: 3 consecutive high-CW windows</div>
       </div>
 
-      <!-- 04 — Signal Quality -->
-      <div class="measure-row flip">
-        <div class="measure-photo">
-          <!--
-            ADD PHOTO: docs/assets/measure-signal.jpg
-            Suggested: EEG headset being worn, electrode placement, or signal visualization
-            Uncomment: <img src="assets/measure-signal.jpg" alt="EEG signal quality" />
-          -->
-          <svg style="position:absolute;inset:0;width:100%;height:100%;opacity:0.15" viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg">
-            <circle cx="200" cy="150" r="8" fill="#5B9CF6"/>
-            <circle cx="80"  cy="150" r="8" fill="#5B9CF6"/>
-            <circle cx="320" cy="150" r="8" fill="#5B9CF6"/>
-            <circle cx="200" cy="70"  r="8" fill="#5B9CF6"/>
-            <circle cx="200" cy="230" r="8" fill="#5B9CF6"/>
-            <line x1="80"  y1="150" x2="200" y2="150" stroke="#5B9CF6" stroke-width="1.5" stroke-dasharray="4 4"/>
-            <line x1="200" y1="150" x2="320" y2="150" stroke="#5B9CF6" stroke-width="1.5" stroke-dasharray="4 4"/>
-            <line x1="200" y1="70"  x2="200" y2="230" stroke="#5B9CF6" stroke-width="1.5" stroke-dasharray="4 4"/>
-          </svg>
-          <div class="photo-placeholder">
-            <div class="ph-icon">◎</div>
-            <div class="ph-label">Add EEG headset photo</div>
-          </div>
-          <div style="position:absolute;bottom:16px;left:16px;z-index:5">
-            <span class="measure-chip chip-blue">Per-Channel</span>
-          </div>
+      <div class="metric-card">
+        <div class="metric-num metric-num-blue">04 — Confidence Weighting</div>
+        <div class="metric-title">Signal Quality</div>
+        <div class="metric-body">
+          Per-channel standard deviation heuristic in live mode; spectral attention weight proxy
+          in demo mode. The signal quality index (SQI) is passed into the fusion layer so noisy
+          or poorly-connected channels are automatically down-weighted.
         </div>
-        <div class="measure-text">
-          <div class="measure-num measure-num-blue">04 — Confidence Weighting</div>
-          <div class="measure-title">Signal<br>Quality</div>
-          <div class="measure-body">
-            Per-channel standard deviation heuristic in live mode; spectral attention weight proxy
-            in demo mode. The signal quality index (SQI) is passed into the fusion layer so noisy
-            or poorly-connected channels are down-weighted automatically.
-          </div>
-          <div class="measure-formula">σ heuristic per channel &nbsp;(Viola et al., 2009)</div>
-        </div>
+        <div class="metric-formula">σ heuristic per channel &nbsp;(Viola et al., 2009)</div>
       </div>
-
     </div>
   </div>
 </section>
