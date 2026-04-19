@@ -10,7 +10,7 @@
 [![Dataset](https://img.shields.io/badge/Dataset-Kaggle-20BEFF?style=flat-square&logo=kaggle&logoColor=white)](https://www.kaggle.com/datasets/brandon19834/universe-merged-withzero-noasr)
 [![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)](LICENSE)
 
-*Measures cognitive workload, mental fatigue, and focus streaks in real time using EEG — powered by a custom multimodal deep learning model trained on the UNIVERSE dataset (n=12 subjects, LOSO).*
+*Measures cognitive workload, mental fatigue, and focus streaks in real time using EEG — powered by a custom multimodal deep learning model trained on the UNIVERSE dataset (n=24 subjects, LOSO).*
 
 **[Website](https://notaveragegithubuser.github.io/Brain-Battery) · [Dataset](https://www.kaggle.com/datasets/brandon19834/universe-merged-withzero-noasr) · [Getting Started](#getting-started)**
 
@@ -35,11 +35,11 @@
 
 ## Features
 
-- **Demo mode** — replay 12 pre-recorded subjects from the UNIVERSE EEG + physio dataset with full playback controls
+- **Demo mode** — replay 24 pre-recorded subjects from the UNIVERSE EEG + physio dataset with full playback controls
 - **Live mode** — connect a Muse headband via [BlueMuse](https://github.com/kowalej/BlueMuse) for real-time EEG inference
 - **Personalization** — online Bayesian calibration adapts to your individual cognitive baseline over sessions
 - **Session history** — every run is logged; trend charts and per-session summaries stored locally
-- **First-run setup screen** — auto-downloads the dataset from Kaggle with just your API key
+- **First-run setup screen** — auto-downloads the dataset from Google Drive (no account needed) or Kaggle
 
 ---
 
@@ -64,37 +64,33 @@ Spectral (36 features)      →  MLP with BatchNorm                          ─
 
 ### Prerequisites
 
-```bash
-python >= 3.10
-pip install streamlit torch numpy scipy plotly kaggle
-```
+- Python 3.10+
+- All other dependencies install automatically via `requirements.txt`
 
-### 1. Clone the repo
+### Quickstart
 
 ```bash
 git clone https://github.com/NotAverageGitHubUser/Brain-Battery.git
 cd Brain-Battery
-```
-
-### 2. Install dependencies
-
-```bash
 pip install -r requirements.txt
+python -m streamlit run dashboard.py
 ```
 
-### 3. Get the dataset
+On first run, a setup screen appears automatically. Click **"Download from Google Drive"** — no account or API key required. The app downloads the dataset (~300 MB) and launches.
 
-**Option A — Auto-download (easiest):** Launch the app. If `Data/` is missing, a setup screen appears. Enter your [Kaggle API credentials](https://www.kaggle.com/settings/account) and click **Download Dataset**.
+### Dataset
 
-**Option B — Manual:** Download from Kaggle and copy four files into `Data/`:
+The UNIVERSE EEG dataset is hosted publicly on Google Drive:
 
-```
-https://www.kaggle.com/datasets/brandon19834/universe-merged-withzero-noasr
-```
+**[📁 Download data folder →](https://drive.google.com/drive/folders/1EiRr-hOapvOXsaHG16uW5Be1FZ3146Q6?usp=drive_link)**
 
-Required files: `eeg.npy` · `physio.npy` · `label_workload.npy` · `subjects.npy`
+The in-app setup screen handles this automatically, but if you prefer to download manually, copy these four files into a `Data/` folder next to `dashboard.py`:
 
-### 4. Run
+`eeg.npy` · `physio.npy` · `label_workload.npy` · `subjects.npy`
+
+Also available on Kaggle: [`brandon19834/universe-merged-withzero-noasr`](https://www.kaggle.com/datasets/brandon19834/universe-merged-withzero-noasr)
+
+### Run
 
 ```bash
 python -m streamlit run dashboard.py
@@ -106,7 +102,7 @@ Open `http://localhost:8501` in your browser. Choose **Demo Mode** to explore pr
 
 ## Dataset
 
-The UNIVERSE dataset contains EEG and physiological recordings from 12 subjects performing cognitive tasks at varying mental load levels, labeled with NASA Task Load Index (NASA-TLX) scores.
+The UNIVERSE dataset contains EEG and physiological recordings from 24 subjects performing cognitive tasks at varying mental load levels, labeled with NASA Task Load Index (NASA-TLX) scores.
 
 | Property | Value |
 |----------|-------|

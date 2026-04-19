@@ -7,7 +7,7 @@ WHAT THIS MEASURES
    P(high CW) = softmax(workload_head(EEG ⊕ Physio ⊕ Freq))₁
    Workload  = 100 × P(high CW)
    0% = fully rested. 100% = brain maxed out.
-   NASA-TLX binary labels, UNIVERSE dataset (n=12 subjects, LOSO).
+   NASA-TLX binary labels, UNIVERSE dataset (n=24 subjects, LOSO).
    NOT emotional stress — different construct, different labels.
 
 2. MENTAL FATIGUE  (EEG spectral only — no model involved)
@@ -2158,7 +2158,7 @@ if st.session_state.active_tab == "Summary":
         n_lo = int(np.sum(st.session_state._labels_data==0))
         rm1, rm2, rm3, rm4 = st.columns(4)
         rm1.metric("LOSO accuracy (avg)", "~50%",       "Best subject 53.5% (S12)")
-        rm2.metric("Best signal",  "Freq bands",         "σ=0.031 across 12 subjects")
+        rm2.metric("Best signal",  "Freq bands",         "σ=0.031 across 24 subjects")
         rm3.metric("Worst case",   "Subject 2: 27.5%",   "Fails zero-calibration")
         rm4.metric("This window",  f"{n_lo}↓ + {n_hi}↑","Workload rises at midpoint")
 
@@ -2301,7 +2301,7 @@ P(high CW) = softmax(
 )₁
 Workload = 100 × P(high CW)
 ```
-Trained on NASA-TLX binary labels, UNIVERSE dataset (n=12 subjects, LOSO).
+Trained on NASA-TLX binary labels, UNIVERSE dataset (n=24 subjects, LOSO).
 Threshold fixed at 0.5 in Demo mode; personalized via Welford algorithm in Live mode.
 
 **What it is NOT:** emotional stress — that requires HRV, phasic EDA, cortisol.
@@ -2378,7 +2378,7 @@ Learned SQI gate: `att = softmax(content × (quality + 0.1) / 3)`
 - **Physio** — heart rate & skin conductance (Empatica E4; imputed in Live)
 - **Spectral** — 36-dim log band power + β/(θ+α) + θ/α + frontal asymmetry
 
-**Key finding:** σ(spectral accuracy) = 0.031 across 12 subjects —
+**Key finding:** σ(spectral accuracy) = 0.031 across 24 subjects —
 lowest cross-subject variance of the three towers.
             """)
         ph_signal = st.empty()
