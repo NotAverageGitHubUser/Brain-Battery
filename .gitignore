@@ -1,1 +1,4 @@
 Data/*.npy
+__pycache__/
+*.pyc
+results/
