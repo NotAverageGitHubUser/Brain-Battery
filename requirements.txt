@@ -4,3 +4,7 @@ plotly
 scipy
 torch
 gdown
+xgboost
+matplotlib
+scikit-learn
+anthropic
