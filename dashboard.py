@@ -86,6 +86,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from scipy.signal import welch
+import gdown
 
 try:
     import pylsl
@@ -104,6 +105,34 @@ DATA_FILES     = ["eeg.npy", "physio.npy", "label_workload.npy", "subjects.npy"]
 
 PROFILES_DIR = Path("user_profiles"); PROFILES_DIR.mkdir(exist_ok=True)
 HISTORY_FILE = Path("history.jsonl")
+
+_GDRIVE_IDS = {
+    "eeg.npy":            "1KX5KRbvReqwMIMxvhakua4SyBNOwR1uE",
+    "physio.npy":         "1omBlQ7pbIQ_wHQ84a8B6I3SsatV34zzL",
+    "label_workload.npy": "16MwlNtI1bklwrqmFNh8TNuUrSEqLRWca",
+    "subjects.npy":       "1JQqnVtg1hFoS-tXPpevrXkKV9Fgj6unZ",
+    "label_stress.npy":   "1_rGVSBB0EyG_DuF3iQGQAaYoWufxh3Ct",
+    "domains.npy":        "1qZdikvDET5Oh7TbNlYW3Xg7dZdD42xgG",
+    "psd_features.npy":   "10bSY2BjO9F0ELPDvRNY3TOPAnGO3Tmxz",
+    "sqi.npy":            "1b-LUFbQfmx7Nr5JAlnsSrA7Hz5PlX0M4",
+    "fatigue_proxy.npy":  "1s4IOvbe-Bdln3KZtQfRbNSKXq81rN_qD",
+}
+
+@st.cache_resource
+def _ensure_data() -> Path:
+    """Download .npy files from Google Drive if not present (Streamlit Cloud)."""
+    local = Path(DATA_DIR)
+    if all((local / f).exists() for f in DATA_FILES):
+        return local
+    dest = Path("/tmp/brain-battery/Data")
+    dest.mkdir(parents=True, exist_ok=True)
+    for filename, file_id in _GDRIVE_IDS.items():
+        out = dest / filename
+        if not out.exists():
+            gdown.download(
+                f"https://drive.google.com/uc?id={file_id}", str(out), quiet=False
+            )
+    return dest
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -920,9 +949,10 @@ class MultimodalCWSANN(nn.Module):
 # ══════════════════════════════════════════════════════════════════════════════
 # 9. RUNTIME CONSTANTS
 # ══════════════════════════════════════════════════════════════════════════════
-DEVICE  = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-H5_PATH = DATA_DIR
-PT_PATH = MODEL_PATH
+DEVICE   = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+DATA_DIR = str(_ensure_data())   # overrides CONFIG-level "Data"; fixes check_data_ready() too
+H5_PATH  = DATA_DIR
+PT_PATH  = MODEL_PATH
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -1323,14 +1353,49 @@ div[data-testid="stSidebar"] { display: none !important; }
   <p style="color:#6B7280;font-size:14px;font-family:'DM Sans',sans-serif;
             line-height:1.7;margin:0">
     Brain Battery needs the UNIVERSE EEG dataset (~300 MB, 4 files) to run Demo mode.
-    Download it automatically with your Kaggle API key, or follow the manual steps below.
+    Download it automatically via <strong style="color:#D1D5DB">Google Drive</strong>
+    (no account required), with your <strong style="color:#D1D5DB">Kaggle API key</strong>,
+    or follow the manual steps below.
   </p>
 </div>
 <div style="min-height:20px"></div>
 """, unsafe_allow_html=True)
 
-    # ── Auto-download ─────────────────────────────────────────────────────────
-    with st.expander("Auto-Download via Kaggle API", expanded=True):
+    # ── Google Drive download (no credentials needed) ─────────────────────────
+    with st.expander("Auto-Download via Google Drive", expanded=True):
+        st.markdown("""
+<p style="color:#9CA3AF;font-size:13px;font-family:'DM Sans',sans-serif;
+          line-height:1.6;margin-bottom:4px">
+  No account required. Files are hosted publicly on Google Drive and downloaded
+  directly using <code>gdown</code>.
+</p>""", unsafe_allow_html=True)
+        if st.button("Download from Google Drive", type="primary",
+                      use_container_width=True, key="setup_gdrive_btn"):
+            _status = st.empty()
+            _prog   = st.progress(0)
+            try:
+                _data = Path("Data"); _data.mkdir(exist_ok=True)
+                _total = len(_GDRIVE_IDS)
+                for _i, (_fname, _fid) in enumerate(_GDRIVE_IDS.items()):
+                    _out = _data / _fname
+                    if not _out.exists():
+                        _status.info(f"Downloading {_fname} ({_i + 1}/{_total})…")
+                        gdown.download(
+                            f"https://drive.google.com/uc?id={_fid}", str(_out), quiet=True
+                        )
+                    _prog.progress(int((_i + 1) / _total * 100))
+                _missing = [f for f in DATA_FILES if not (_data / f).exists()]
+                if _missing:
+                    _status.error(f"Download finished but files missing: {_missing}")
+                else:
+                    _status.success("All files downloaded! Launching Brain Battery…")
+                    time.sleep(1)
+                    st.rerun()
+            except Exception as _e:
+                _status.error(f"Download failed: {_e}")
+
+    # ── Auto-download via Kaggle ───────────────────────────────────────────────
+    with st.expander("Auto-Download via Kaggle API", expanded=False):
         st.markdown("""
 <p style="color:#9CA3AF;font-size:13px;font-family:'DM Sans',sans-serif;
           line-height:1.6;margin-bottom:4px">
