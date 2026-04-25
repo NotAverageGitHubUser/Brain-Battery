@@ -2115,9 +2115,10 @@ if st.session_state.app_mode == "🎧 Live — Muse headband":
                        font-weight:500;color:#FFFFFF;margin:6px 0 8px 0;
                        letter-spacing:0.02em">Muse Headset Setup</h2>
             <p class="bb-desc">
-              Brain Battery now connects directly to your Muse over Bluetooth — no extra
-              app required when <code>brainflow</code> is installed. If you prefer
-              BlueMuse, that path still works as a fallback.
+              Two ways to connect. <strong style="color:#D1D5DB">Direct (brainflow)</strong>
+              is the easiest — your Muse pairs automatically when you click Connect,
+              no extra software needed. If that doesn't work on your machine,
+              <strong style="color:#D1D5DB">BlueMuse</strong> is the fallback.
             </p>
           </div>
         </div>
@@ -2137,33 +2138,67 @@ if st.session_state.app_mode == "🎧 Live — Muse headband":
 
         # Step 1 — hardware (always shown).
         _steps = [
-            ("Hardware",
-             _pill(True, "Muse 2 / Muse S", ""),
-             """4-channel EEG: <strong style="color:#D1D5DB">TP9 · AF7 · AF8 · TP10</strong>.
-             Power on by holding the button until the LED blinks.<br>
-             <span style="color:#6B7280;font-size:12px">Live mode uses EEG only —
-             physio signals are simulated from the offline dataset.</span>"""),
+            ("Power on your Muse",
+             _pill(True, "Muse 2 / Muse S supported", ""),
+             """Hold the button on the back of the headset for <strong style="color:#D1D5DB">3 seconds</strong>
+             until the LED blinks white. That's it — the Muse is now broadcasting a
+             Bluetooth signal.<br><br>
+             Make sure your laptop's <strong style="color:#D1D5DB">Bluetooth is turned on</strong>
+             (Windows Settings → Bluetooth &amp; devices → toggle ON).<br><br>
+             <span style="color:#6B7280;font-size:12px">
+             4 EEG electrodes: TP9 (left ear) · AF7 (left forehead) ·
+             AF8 (right forehead) · TP10 (right ear).
+             Heart rate and EDA are not recorded by Muse — those are EEG-only readings.</span>"""),
         ]
 
-        # Step 2 — driver path. Prefer brainflow; show BlueMuse fallback details
-        # only if brainflow is missing OR an LSL stream is already up.
+        # Step 2 — driver path.
         if _bf_ok and not _stream_live:
             _steps.append((
-                "Direct BLE (brainflow)",
-                _pill(True, "Driver ready", "Install brainflow"),
-                """No external app needed. Brain Battery will scan for your Muse over
-                Bluetooth when you click <strong style="color:#D1D5DB">Connect</strong>
-                below. First connection takes ~5–10 s.<br>
-                <span style="color:#6B7280;font-size:12px">Tip: make sure your Muse is
-                powered on and not paired to another phone/app.</span>"""))
+                "Connect directly — no app needed",
+                _pill(True, "brainflow ready", "Install brainflow"),
+                """<strong style="color:#D1D5DB">You do not need to pair the Muse in Windows
+                Bluetooth settings</strong> and you do not need to install any extra software.
+                Brain Battery handles the Bluetooth connection itself using the
+                <code style="font-size:12px;color:#9CA3AF">brainflow</code> library.<br><br>
+                Just click <strong style="color:#D1D5DB">Connect</strong> below.
+                Brain Battery will search for your Muse over Bluetooth for up to 10 seconds.
+                When it finds the headset it connects automatically and you'll see the
+                electrode status appear on the next screen.<br><br>
+                <strong style="color:#9CA3AF">If Connect fails:</strong>
+                <ul style="color:#6B7280;font-size:12px;margin:6px 0 0 0;padding-left:18px">
+                  <li>Make sure no other app is connected to the Muse right now
+                      (MindMonitor, Petal Metrics, the official Muse app). Those apps
+                      hold an exclusive Bluetooth lock — close them first.</li>
+                  <li>Power-cycle the Muse: hold the button until the LED turns off,
+                      wait 3 seconds, hold again until it blinks.</li>
+                  <li>Move the Muse within 1–2 metres of your laptop for the initial scan.</li>
+                </ul>"""))
         else:
             _steps.append((
-                "BlueMuse (LSL bridge)",
-                _pill(_stream_live, "Stream detected", "Waiting for stream…"),
-                """Install BlueMuse, pair your Muse in Windows Bluetooth settings, then
-                click <strong style="color:#D1D5DB">Start Streaming</strong> in
-                BlueMuse. The Connect button below will activate as soon as a stream
-                is detected."""))
+                "BlueMuse — Bluetooth bridge app",
+                _pill(_stream_live, "Stream detected ✓", "Waiting for BlueMuse stream…"),
+                """BlueMuse is a free Windows app that sits between your Muse and Brain Battery.
+                It pairs the headset via standard Windows Bluetooth and then streams the
+                EEG data over a local network protocol (LSL) that Brain Battery reads.<br><br>
+                <strong style="color:#D1D5DB">Step-by-step:</strong>
+                <ol style="color:#9CA3AF;font-size:13px;margin:8px 0 0 0;padding-left:18px;line-height:2">
+                  <li>Click <strong style="color:#D1D5DB">Download BlueMuse</strong> below
+                      and run the installer.</li>
+                  <li>Open <strong style="color:#D1D5DB">Windows Settings →
+                      Bluetooth &amp; devices → Add device</strong>.
+                      Select <strong style="color:#D1D5DB">Muse-XXXX</strong> from the list
+                      (XXXX matches the serial on your headset). Pairing takes ~10 seconds
+                      and only needs to be done once.</li>
+                  <li>Open BlueMuse. Your headset should appear automatically.
+                      Click <strong style="color:#D1D5DB">Start Streaming</strong>.
+                      Wait for the status to read
+                      <strong style="color:#00CC77">LSL: Sending</strong>.</li>
+                  <li>Click <strong style="color:#D1D5DB">Re-detect</strong> below —
+                      the status pill above will turn green when the stream is found.</li>
+                  <li>Click <strong style="color:#D1D5DB">Connect</strong>.</li>
+                </ol>
+                <span style="color:#6B7280;font-size:12px">Keep BlueMuse running in the
+                background — closing it disconnects the stream.</span>"""))
 
         for i, (title, status, body) in enumerate(_steps, 1):
             st.markdown(f"""
