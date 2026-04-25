@@ -36,7 +36,7 @@
 ## Features
 
 - **Demo mode** — replay 24 pre-recorded subjects from the UNIVERSE EEG + physio dataset with full playback controls
-- **Live mode** — connect a Muse headband via [BlueMuse](https://github.com/kowalej/BlueMuse) for real-time EEG inference
+- **Live mode** — connect a Muse 2 or Muse S headband directly over Bluetooth (brainflow, no extra app) or via [BlueMuse](https://github.com/kowalej/BlueMuse) as a fallback; real-time EEG inference with per-electrode contact quality strip
 - **Personalization** — online Bayesian calibration adapts to your individual cognitive baseline over sessions
 - **Session history** — every run is logged; trend charts and per-session summaries stored locally
 - **First-run setup screen** — auto-downloads the dataset from Google Drive (no account needed) or Kaggle
@@ -120,14 +120,35 @@ The UNIVERSE dataset contains EEG and physiological recordings from 24 subjects 
 
 ## Live Mode (Muse Headband)
 
-Live mode streams EEG from a [Muse](https://choosemuse.com/) headband via [BlueMuse](https://github.com/kowalej/BlueMuse) (Windows LSL bridge).
+Live mode streams EEG from a [Muse 2 or Muse S](https://choosemuse.com/) headband directly into the model. Two connection methods are supported — try **Direct (brainflow)** first, fall back to **BlueMuse** if needed.
 
-> **Note:** Live mode uses EEG only. Physiological signals (BVP, HR, EDA) are available in Demo mode from the pre-recorded dataset but are not captured by the Muse hardware.
+> **Note:** Live mode uses EEG only (TP9, AF7, AF8, TP10). Physiological signals (BVP, HR, EDA) are not captured by the Muse hardware — they are available in Demo mode from the pre-recorded dataset.
 
-Setup steps:
-1. Install [BlueMuse](https://github.com/kowalej/BlueMuse) and start the LSL stream
-2. Launch Brain Battery → select **Live Mode**
-3. Click **Connect** — the model runs inference on each incoming EEG window
+### Method 1 — Direct Bluetooth via brainflow (recommended, no extra app)
+
+`brainflow` is already included in `requirements.txt`, so if you ran `pip install -r requirements.txt` you already have it.
+
+1. **Turn on your Muse** — hold the button on the back for 3 seconds until the LED blinks white.
+2. **Make sure Bluetooth is on** on your laptop (Windows Settings → Bluetooth & devices → toggle ON).
+3. **Close any other app** that might be connected to the Muse right now (MindMonitor, Petal Metrics, the official Muse app). These hold an exclusive Bluetooth lock and will block the connection.
+4. **Launch Brain Battery** and select **🎧 Live — Muse headband** in the sidebar.
+5. Click **Setup Muse Headset** → **Connect**. Brain Battery searches for your Muse over Bluetooth for up to 10 seconds and connects automatically. No pairing in Windows Settings required.
+
+**If Connect fails:** power-cycle the Muse (hold button until LED off, wait 3 s, hold again until it blinks), move within 1–2 m of your laptop, and try again.
+
+### Method 2 — BlueMuse LSL bridge (fallback, Windows only)
+
+Use this if the direct method doesn't work on your machine (some Windows configurations block direct BLE access from Python).
+
+1. **Download and install [BlueMuse](https://github.com/kowalej/BlueMuse/releases/latest)** — free Windows app (~50 MB installer).
+2. **Pair the Muse in Windows Settings** — Settings → Bluetooth & devices → Add device → select **Muse-XXXX** from the list (one-time setup, ~10 seconds).
+3. **Open BlueMuse** and click **Start Streaming**. Wait for the status to read **LSL: Sending** (green text). Keep BlueMuse running in the background.
+4. **Launch Brain Battery** and select **🎧 Live — Muse headband** → **Setup Muse Headset**. The setup page detects the stream automatically and enables the Connect button.
+5. Click **Connect**.
+
+### What Live Mode shows
+
+Once connected, the dashboard shows a **4-electrode contact strip** (TP9 / AF7 / AF8 / TP10) with live signal quality for each electrode — green means good contact, red means the electrode is flat (not touching skin), amber means movement noise. The model runs inference on every 2-second EEG window and updates the Cognitive Workload percentage in real time.
 
 ---
 
