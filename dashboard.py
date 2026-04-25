@@ -94,6 +94,15 @@ try:
 except ImportError:
     PYLSL_AVAILABLE = False
 
+try:
+    from brainflow.board_shim import BoardShim, BoardIds, BrainFlowInputParams
+    from brainflow.exit_codes import BrainFlowError
+    BRAINFLOW_AVAILABLE = True
+except ImportError:
+    BRAINFLOW_AVAILABLE = False
+
+MUSE_DRIVER_AVAILABLE = PYLSL_AVAILABLE or BRAINFLOW_AVAILABLE
+
 # ══════════════════════════════════════════════════════════════════════════════
 # CONFIG
 # ══════════════════════════════════════════════════════════════════════════════
@@ -803,44 +812,206 @@ def is_signal_stable(eeg_epoch: np.ndarray) -> Tuple[bool, str]:
 # 7. MUSE STREAMER
 # ══════════════════════════════════════════════════════════════════════════════
 
+def detect_muse_drivers(lsl_timeout: float = 0.5) -> dict:
+    """Preflight: report which driver paths can reach a Muse without blocking the UI.
+
+    Returns dict with: brainflow_available, lsl_available, lsl_stream_found,
+    lsl_stream_meta (None or {name, source_id, channel_count, srate}), recommended.
+    """
+    out = {
+        "brainflow_available": BRAINFLOW_AVAILABLE,
+        "lsl_available":       PYLSL_AVAILABLE,
+        "lsl_stream_found":    False,
+        "lsl_stream_meta":     None,
+        "recommended":         None,
+    }
+    if PYLSL_AVAILABLE:
+        try:
+            streams = pylsl.resolve_byprop("type", "EEG", 1, timeout=lsl_timeout)
+            if streams:
+                s = streams[0]
+                out["lsl_stream_found"] = True
+                out["lsl_stream_meta"] = {
+                    "name":          s.name(),
+                    "source_id":     s.source_id(),
+                    "channel_count": s.channel_count(),
+                    "srate":         s.nominal_srate(),
+                }
+        except Exception:
+            pass
+    if out["lsl_stream_found"]:
+        out["recommended"] = "lsl"
+    elif BRAINFLOW_AVAILABLE:
+        out["recommended"] = "brainflow"
+    elif PYLSL_AVAILABLE:
+        out["recommended"] = "lsl"
+    return out
+
+
 class MuseStreamer:
-    """Non-blocking Muse EEG via pylsl daemon thread. Local Windows only."""
+    """Non-blocking Muse EEG. Tries brainflow direct BLE first, falls back to LSL/BlueMuse."""
     SFREQ = 256
     WIN   = 512
 
     def __init__(self):
         self._buf     = collections.deque(maxlen=self.WIN * 4)
         self._inlet   = None
+        self._board   = None
+        self._driver  = None              # "brainflow" or "lsl"
         self._thread  = None
         self._running = False
+        self._meta    = {}                # populated on connect
 
-    def connect(self, timeout: float = 5.0) -> Tuple[bool, str]:
+    def connect(self, timeout: float = 5.0,
+                prefer: Optional[str] = None) -> Tuple[bool, str]:
+        """Try drivers in order. `prefer` ∈ {None,'brainflow','lsl'} forces a path."""
+        order = []
+        if prefer == "lsl":
+            order = ["lsl"]
+        elif prefer == "brainflow":
+            order = ["brainflow"]
+        else:
+            # Prefer LSL if a stream is already up (BlueMuse running) — instant.
+            # Otherwise try brainflow direct BLE so user doesn't need BlueMuse.
+            pre = detect_muse_drivers(lsl_timeout=0.3)
+            if pre["lsl_stream_found"]:
+                order = ["lsl", "brainflow"]
+            else:
+                order = ["brainflow", "lsl"]
+
+        errors = []
+        for drv in order:
+            ok, msg = (self._connect_brainflow(timeout) if drv == "brainflow"
+                       else self._connect_lsl(timeout))
+            if ok:
+                return True, msg
+            errors.append(f"{drv}: {msg}")
+        return False, " | ".join(errors) if errors else "No driver available."
+
+    # ── LSL path (BlueMuse / muselsl) ────────────────────────────────────
+    def _connect_lsl(self, timeout: float) -> Tuple[bool, str]:
         if not PYLSL_AVAILABLE:
-            return False, "pylsl not found. Run: python -m streamlit run dashboard.py"
-        streams = pylsl.resolve_byprop("type", "EEG", timeout=timeout)
+            return False, "pylsl not installed"
+        streams = pylsl.resolve_byprop("type", "EEG", 1, timeout=timeout)
         if not streams:
-            return False, "No Muse stream. Open BlueMuse → Start Streaming first."
-        self._inlet   = pylsl.StreamInlet(streams[0])
+            return False, "no EEG LSL stream (start BlueMuse → Start Streaming)"
+        s = streams[0]
+        if s.channel_count() < 4:
+            return False, f"stream has {s.channel_count()} channels, need ≥4"
+        self._inlet   = pylsl.StreamInlet(s)
+        self._driver  = "lsl"
+        self._meta    = {
+            "driver": "lsl", "name": s.name(), "source_id": s.source_id(),
+            "channel_count": s.channel_count(), "srate": s.nominal_srate(),
+        }
         self._running = True
-        self._thread  = threading.Thread(target=self._collect, daemon=True)
+        self._thread  = threading.Thread(target=self._collect_lsl, daemon=True)
         self._thread.start()
-        return True, "Connected"
+        # Confirm samples actually arrive within 2s.
+        deadline = time.time() + 2.0
+        while time.time() < deadline and len(self._buf) < 8:
+            time.sleep(0.05)
+        if len(self._buf) < 8:
+            self.stop()
+            return False, "stream found but no samples in 2s (check BlueMuse status)"
+        return True, f"Connected via LSL ({s.name()})"
 
-    def _collect(self):
+    def _collect_lsl(self):
         while self._running and self._inlet:
-            sample, _ = self._inlet.pull_sample(timeout=0.1)
+            try:
+                sample, _ = self._inlet.pull_sample(timeout=0.1)
+            except Exception:
+                break
             if sample:
                 self._buf.append(np.array(sample[:4], dtype=np.float32) * 1e-6)
 
+    # ── brainflow path (direct BLE, no external app) ─────────────────────
+    def _connect_brainflow(self, timeout: float) -> Tuple[bool, str]:
+        if not BRAINFLOW_AVAILABLE:
+            return False, "brainflow not installed"
+        # Try Muse 2 then Muse S. brainflow auto-discovers nearby BLE Muse.
+        BoardShim.disable_board_logger()
+        last_err = ""
+        for board_id, label in [(BoardIds.MUSE_2_BOARD, "Muse 2"),
+                                (BoardIds.MUSE_S_BOARD, "Muse S")]:
+            params = BrainFlowInputParams()
+            try:
+                board = BoardShim(board_id, params)
+                board.prepare_session()
+                board.start_stream()
+                eeg_idx = BoardShim.get_eeg_channels(board_id)[:4]
+                self._board   = board
+                self._driver  = "brainflow"
+                self._eeg_idx = eeg_idx
+                self._meta    = {
+                    "driver": "brainflow", "name": label,
+                    "channel_count": len(eeg_idx),
+                    "srate": BoardShim.get_sampling_rate(board_id),
+                }
+                self._running = True
+                self._thread  = threading.Thread(target=self._collect_brainflow,
+                                                 daemon=True)
+                self._thread.start()
+                # Confirm samples arrive.
+                deadline = time.time() + max(timeout, 3.0)
+                while time.time() < deadline and len(self._buf) < 8:
+                    time.sleep(0.1)
+                if len(self._buf) < 8:
+                    self.stop()
+                    last_err = f"{label} session opened but no samples"
+                    continue
+                return True, f"Connected via brainflow ({label})"
+            except BrainFlowError as e:
+                last_err = f"{label}: {e}"
+            except Exception as e:
+                last_err = f"{label}: {e}"
+        return False, last_err or "no Muse found over BLE"
+
+    def _collect_brainflow(self):
+        # brainflow returns native ADC counts in µV for Muse — convert to V.
+        target_sf = self.SFREQ
+        while self._running and self._board is not None:
+            try:
+                data = self._board.get_board_data()
+            except Exception:
+                break
+            if data.size:
+                eeg = data[self._eeg_idx, :].T.astype(np.float32) * 1e-6
+                for row in eeg:
+                    self._buf.append(row)
+            time.sleep(1.0 / target_sf * 4)
+
+    # ── Common API ───────────────────────────────────────────────────────
     def get_epoch(self) -> Optional[np.ndarray]:
         if len(self._buf) < self.WIN:
             return None
         return np.array(list(self._buf))[-self.WIN:].T.astype(np.float32)
 
+    @property
+    def meta(self) -> dict:
+        return dict(self._meta)
+
+    def channel_quality(self) -> Optional[np.ndarray]:
+        """Per-channel std over the last 1s of buffer (in V). None if buffer too small."""
+        n = min(self.SFREQ, len(self._buf))
+        if n < 32:
+            return None
+        recent = np.array(list(self._buf))[-n:]
+        return recent.std(axis=0)
+
     def stop(self):
         self._running = False
         if self._thread:
             self._thread.join(timeout=1.0)
+        if self._driver == "brainflow" and self._board is not None:
+            try:
+                self._board.stop_stream()
+                self._board.release_session()
+            except Exception:
+                pass
+            self._board = None
+        self._inlet  = None
+        self._driver = None
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -1370,7 +1541,7 @@ div[data-testid="stSidebar"] { display: none !important; }
   directly using <code>gdown</code>.
 </p>""", unsafe_allow_html=True)
         if st.button("Download from Google Drive", type="primary",
-                      use_container_width=True, key="setup_gdrive_btn"):
+                      width='stretch', key="setup_gdrive_btn"):
             _status = st.empty()
             _prog   = st.progress(0)
             try:
@@ -1411,7 +1582,7 @@ div[data-testid="stSidebar"] { display: none !important; }
                                     type="password", key="setup_kg_key")
 
         dl_btn = st.button("Download Dataset", type="primary",
-                            use_container_width=True, key="setup_dl_btn",
+                            width='stretch', key="setup_dl_btn",
                             disabled=(not kg_user or not kg_key))
 
         if dl_btn:
@@ -1473,7 +1644,7 @@ div[data-testid="stSidebar"] { display: none !important; }
 </ol>
 """, unsafe_allow_html=True)
         if st.button("I've copied the files — check again",
-                      use_container_width=True, key="setup_manual_check"):
+                      width='stretch', key="setup_manual_check"):
             if check_data_ready():
                 st.success("Files detected! Launching Brain Battery...")
                 time.sleep(0.8)
@@ -1591,7 +1762,7 @@ def render_home():
           </p>
         </div>
         """, unsafe_allow_html=True)
-        if st.button("Launch Demo", key="home_demo", use_container_width=True, type="primary"):
+        if st.button("Launch Demo", key="home_demo", width='stretch', type="primary"):
             st.session_state.app_mode   = "📼 Demo — pre-recorded subjects"
             st.session_state.page       = "app"
             st.session_state.active_tab = "Live"
@@ -1617,7 +1788,7 @@ def render_home():
           </p>
         </div>
         """, unsafe_allow_html=True)
-        if st.button("Connect Muse", key="home_live", use_container_width=True, type="secondary"):
+        if st.button("Connect Muse", key="home_live", width='stretch', type="secondary"):
             st.session_state.app_mode   = "🎧 Live — Muse headband"
             st.session_state.page       = "app"
             st.session_state.active_tab = "Live"
@@ -1721,7 +1892,7 @@ with st.sidebar:
 
     # ── NAVIGATE expander ────────────────────────────────────────────────────
     with st.expander("Navigate", expanded=True):
-        if st.button("Home", use_container_width=True, key="nav_home"):
+        if st.button("Home", width='stretch', key="nav_home"):
             _save_session_history()
             st.session_state.running         = False
             st.session_state.frame_idx       = 0
@@ -1733,7 +1904,7 @@ with st.sidebar:
             st.rerun()
         if (_app_mode == "🎧 Live — Muse headband"
                 and st.session_state.get("live_subpage") == "setup"):
-            if st.button("Back to Dashboard", use_container_width=True, key="nav_back_dash"):
+            if st.button("Back to Dashboard", width='stretch', key="nav_back_dash"):
                 st.session_state.live_subpage = "overview"
                 st.rerun()
 
@@ -1896,7 +2067,7 @@ if st.session_state.active_tab not in TABS:
 tc   = st.columns(len(TABS))
 for i, tab in enumerate(TABS):
     with tc[i]:
-        if st.button(tab, key=f"tab_{i}", use_container_width=True,
+        if st.button(tab, key=f"tab_{i}", width='stretch',
                      type="primary" if st.session_state.active_tab == tab else "secondary"):
             st.session_state.active_tab = tab; st.rerun()
 
@@ -1907,21 +2078,33 @@ st.markdown('<div class="bb-divider"></div>', unsafe_allow_html=True)
 # 18. LIVE MODE GATE
 # ══════════════════════════════════════════════════════════════════════════════
 if st.session_state.app_mode == "🎧 Live — Muse headband":
-    if not PYLSL_AVAILABLE:
+    if not MUSE_DRIVER_AVAILABLE:
         st.markdown("""
         <div class="conn-card">
           <h3 style="color:#E05050;margin:0 0 8px 0;font-family:'DM Mono',monospace">
-            pylsl Not Found</h3>
+            No Muse Driver Installed</h3>
           <p style="color:#6B7280;font-size:13px;margin-bottom:16px">
-            Streamlit is using a different Python than where pylsl is installed.</p>
+            Install one of the supported drivers, then relaunch with
+            <code>python -m streamlit run dashboard.py</code>:</p>
           <code style="background:#0A0C10;padding:10px 18px;border-radius:8px;
-                       color:#FFFFFF;font-family:'DM Mono',monospace;font-size:13px">
-            python -m streamlit run dashboard.py</code>
+                       color:#FFFFFF;font-family:'DM Mono',monospace;font-size:13px;
+                       display:inline-block;margin-bottom:8px">
+            pip install brainflow</code><br>
+          <span style="color:#6B7280;font-size:11px">or</span><br>
+          <code style="background:#0A0C10;padding:10px 18px;border-radius:8px;
+                       color:#FFFFFF;font-family:'DM Mono',monospace;font-size:13px;
+                       display:inline-block">
+            pip install pylsl</code>
         </div>""", unsafe_allow_html=True)
         st.stop()
 
     # ── SETUP SUBPAGE ────────────────────────────────────────────────────
     if st.session_state.live_subpage == "setup":
+        # Preflight: detect drivers + any live LSL stream (non-blocking, ~0.3s).
+        _pre = detect_muse_drivers(lsl_timeout=0.3)
+        _stream_live = _pre["lsl_stream_found"]
+        _bf_ok       = _pre["brainflow_available"]
+
         st.markdown("""
         <div style="max-width:720px;margin:0 auto">
           <div style="margin-bottom:28px">
@@ -1932,58 +2115,57 @@ if st.session_state.app_mode == "🎧 Live — Muse headband":
                        font-weight:500;color:#FFFFFF;margin:6px 0 8px 0;
                        letter-spacing:0.02em">Muse Headset Setup</h2>
             <p class="bb-desc">
-              Follow these steps to stream live EEG from your Muse headband into Brain Battery.
-              The entire process takes about 2 minutes on first setup.
+              Brain Battery now connects directly to your Muse over Bluetooth — no extra
+              app required when <code>brainflow</code> is installed. If you prefer
+              BlueMuse, that path still works as a fallback.
             </p>
           </div>
         </div>
         """, unsafe_allow_html=True)
 
+        # ── Status pill helper ──
+        def _pill(ok: bool, ok_label: str, wait_label: str) -> str:
+            if ok:
+                return (f"<span style='font-family:DM Mono,monospace;font-size:11px;"
+                        f"color:#00CC77;background:rgba(0,204,119,0.08);"
+                        f"padding:3px 10px;border-radius:10px;letter-spacing:0.05em'>"
+                        f"● {ok_label}</span>")
+            return (f"<span style='font-family:DM Mono,monospace;font-size:11px;"
+                    f"color:#9CA3AF;background:rgba(156,163,175,0.06);"
+                    f"padding:3px 10px;border-radius:10px;letter-spacing:0.05em'>"
+                    f"○ {wait_label}</span>")
+
+        # Step 1 — hardware (always shown).
         _steps = [
-            ("Hardware Requirements",
-             """Your Muse 2 or Muse S headband streams 4-channel EEG:
-             <strong style="color:#D1D5DB">TP9</strong> (left ear) &nbsp;·&nbsp;
-             <strong style="color:#D1D5DB">AF7</strong> (left forehead) &nbsp;·&nbsp;
-             <strong style="color:#D1D5DB">AF8</strong> (right forehead) &nbsp;·&nbsp;
-             <strong style="color:#D1D5DB">TP10</strong> (right ear).<br><br>
-             Note: Muse does not record physiological signals (heart rate, EDA).
-             Brain Battery uses <strong style="color:#D1D5DB">EEG only</strong> in live mode
-             — physio signals are available in Demo mode from the pre-recorded dataset."""),
-            ("Install BlueMuse",
-             """BlueMuse bridges your Muse headset to a Lab Streaming Layer (LSL) stream
-             that Brain Battery reads in real time. Requires <strong style="color:#D1D5DB">Windows 10 or 11</strong>
-             with Bluetooth.<br><br>
-             Download and install from:<br>
-             <code style="font-family:'DM Mono',monospace;font-size:12px;
-                          color:#00CC77;background:rgba(0,204,119,0.06);
-                          padding:2px 8px;border-radius:6px">
-               github.com/kowalej/BlueMuse
-             </code><br><br>
-             <strong style="color:#9CA3AF">macOS / other platforms:</strong>
-             Use the MindMonitor app (iOS/Android) with LSL export enabled instead of BlueMuse."""),
-            ("Pair your Muse via Bluetooth",
-             """Power on your Muse by holding the button until the LED blinks.<br><br>
-             Open <strong style="color:#D1D5DB">Windows Settings → Bluetooth & devices → Add device</strong>.
-             Select <strong style="color:#D1D5DB">Muse-XXXX</strong> from the list
-             (last 4 characters match the serial number on your headset).
-             Pairing takes about 10 seconds. You only need to do this once."""),
-            ("Start Streaming in BlueMuse",
-             """Open BlueMuse — your paired device should appear automatically.<br><br>
-             Click <strong style="color:#D1D5DB">Start Streaming</strong>.
-             Confirm the status line reads <strong style="color:#00CC77">LSL: Sending</strong>
-             before proceeding.<br><br>
-             Keep BlueMuse open and running in the background — closing it will stop the stream
-             and disconnect Brain Battery."""),
-            ("Connect in Brain Battery",
-             """Click <strong style="color:#D1D5DB">Connect</strong> below.
-             Brain Battery listens for an LSL EEG stream for up to 5 seconds.<br><br>
-             If connection fails: verify BlueMuse shows
-             <strong style="color:#00CC77">LSL: Sending</strong>,
-             then try again. On first run, Windows Firewall may prompt you to allow LSL —
-             click Allow."""),
+            ("Hardware",
+             _pill(True, "Muse 2 / Muse S", ""),
+             """4-channel EEG: <strong style="color:#D1D5DB">TP9 · AF7 · AF8 · TP10</strong>.
+             Power on by holding the button until the LED blinks.<br>
+             <span style="color:#6B7280;font-size:12px">Live mode uses EEG only —
+             physio signals are simulated from the offline dataset.</span>"""),
         ]
 
-        for i, (title, body) in enumerate(_steps, 1):
+        # Step 2 — driver path. Prefer brainflow; show BlueMuse fallback details
+        # only if brainflow is missing OR an LSL stream is already up.
+        if _bf_ok and not _stream_live:
+            _steps.append((
+                "Direct BLE (brainflow)",
+                _pill(True, "Driver ready", "Install brainflow"),
+                """No external app needed. Brain Battery will scan for your Muse over
+                Bluetooth when you click <strong style="color:#D1D5DB">Connect</strong>
+                below. First connection takes ~5–10 s.<br>
+                <span style="color:#6B7280;font-size:12px">Tip: make sure your Muse is
+                powered on and not paired to another phone/app.</span>"""))
+        else:
+            _steps.append((
+                "BlueMuse (LSL bridge)",
+                _pill(_stream_live, "Stream detected", "Waiting for stream…"),
+                """Install BlueMuse, pair your Muse in Windows Bluetooth settings, then
+                click <strong style="color:#D1D5DB">Start Streaming</strong> in
+                BlueMuse. The Connect button below will activate as soon as a stream
+                is detected."""))
+
+        for i, (title, status, body) in enumerate(_steps, 1):
             st.markdown(f"""
             <div class="bb-card" style="max-width:720px;margin:0 auto 12px auto">
               <div style="display:flex;gap:20px;align-items:flex-start">
@@ -1991,42 +2173,63 @@ if st.session_state.app_mode == "🎧 Live — Muse headband":
                             font-weight:300;color:#374151;min-width:36px;
                             line-height:1.1;padding-top:2px">{i:02d}</div>
                 <div style="flex:1">
-                  <div style="font-family:'DM Mono',monospace;font-size:13px;
-                              font-weight:500;color:#FFFFFF;margin-bottom:8px;
-                              letter-spacing:0.03em">{title}</div>
+                  <div style="display:flex;align-items:center;gap:10px;
+                              margin-bottom:8px">
+                    <div style="font-family:'DM Mono',monospace;font-size:13px;
+                                font-weight:500;color:#FFFFFF;
+                                letter-spacing:0.03em">{title}</div>
+                    {status}
+                  </div>
                   <div class="bb-desc" style="line-height:1.75">{body}</div>
                 </div>
               </div>
             </div>""", unsafe_allow_html=True)
 
-        st.markdown("""
-        <div style="max-width:720px;margin:24px auto 0 auto">
-          <svg width="200" height="72" viewBox="0 0 200 72"
-               style="display:block;margin:0 auto 20px auto;opacity:0.35">
-            <ellipse cx="100" cy="36" rx="78" ry="24" fill="none"
-                     stroke="rgba(255,255,255,0.5)" stroke-width="1.5"/>
-            <circle cx="40"  cy="36" r="5" fill="#FFFFFF"/>
-            <circle cx="82"  cy="22" r="4" fill="#FFFFFF"/>
-            <circle cx="118" cy="22" r="4" fill="#FFFFFF"/>
-            <circle cx="160" cy="36" r="5" fill="#FFFFFF"/>
-            <text x="40"  y="56" text-anchor="middle" fill="rgba(255,255,255,0.4)"
-                  font-family="DM Mono" font-size="8">TP9</text>
-            <text x="82"  y="14" text-anchor="middle" fill="rgba(255,255,255,0.4)"
-                  font-family="DM Mono" font-size="8">AF7</text>
-            <text x="118" y="14" text-anchor="middle" fill="rgba(255,255,255,0.4)"
-                  font-family="DM Mono" font-size="8">AF8</text>
-            <text x="160" y="56" text-anchor="middle" fill="rgba(255,255,255,0.4)"
-                  font-family="DM Mono" font-size="8">TP10</text>
-          </svg>
-        </div>
-        """, unsafe_allow_html=True)
+        # ── BlueMuse helper buttons (only when brainflow unavailable) ──
+        if not _bf_ok:
+            _h1, _h2, _h3 = st.columns([1, 1, 1])
+            with _h1:
+                st.link_button("Download BlueMuse",
+                    "https://github.com/kowalej/BlueMuse/releases/latest",
+                    width='stretch')
+            with _h2:
+                st.link_button("Launch BlueMuse",
+                    "bluemuse://start",
+                    width='stretch',
+                    help="Opens BlueMuse and starts streaming via its URI handler.")
+            with _h3:
+                if st.button("Re-detect", width='stretch',
+                             key="muse_redetect"):
+                    st.rerun()
 
+        # ── Diagnostics expander ──
+        with st.expander("Diagnostics", expanded=False):
+            st.markdown(
+                f"- **brainflow available**: `{_pre['brainflow_available']}`\n"
+                f"- **pylsl available**: `{_pre['lsl_available']}`\n"
+                f"- **LSL stream detected**: `{_pre['lsl_stream_found']}`\n"
+                + (f"- **stream meta**: `{_pre['lsl_stream_meta']}`\n"
+                   if _pre['lsl_stream_meta'] else "")
+                + f"- **recommended driver**: `{_pre['recommended']}`"
+            )
+
+        # ── Connect button ──
+        # Enabled when: brainflow is installed (it'll scan), OR an LSL stream
+        # is already detected.
+        _can_connect = _bf_ok or _stream_live
         _c1, _c2, _c3 = st.columns([2, 1, 2])
         with _c2:
             if st.button("Connect", type="primary",
-                         use_container_width=True, key="muse_connect_setup"):
-                streamer = MuseStreamer()
-                ok, msg  = streamer.connect(timeout=5.0)
+                         width='stretch',
+                         disabled=not _can_connect,
+                         key="muse_connect_setup",
+                         help=("" if _can_connect else
+                               "Install brainflow or start a BlueMuse stream first.")):
+                with st.spinner("Connecting to Muse…"):
+                    streamer = MuseStreamer()
+                    # Force LSL if a stream is already live (fast path).
+                    prefer = "lsl" if _stream_live else None
+                    ok, msg = streamer.connect(timeout=8.0, prefer=prefer)
                 if ok:
                     st.session_state.muse_streamer  = streamer
                     st.session_state.muse_connected = True
@@ -2034,10 +2237,12 @@ if st.session_state.app_mode == "🎧 Live — Muse headband":
                     st.success(msg); st.rerun()
                 else:
                     st.error(msg)
+                    st.caption("Tip: power-cycle the Muse, close other apps "
+                               "(MindMonitor, Petal Metrics) that may hold the BLE link.")
 
         _b1, _b2, _b3 = st.columns([2, 1, 2])
         with _b2:
-            if st.button("← Back to Live Mode", use_container_width=True,
+            if st.button("← Back to Live Mode", width='stretch',
                          key="muse_back_to_overview"):
                 st.session_state.live_subpage = "overview"
                 st.rerun()
@@ -2048,14 +2253,63 @@ if st.session_state.app_mode == "🎧 Live — Muse headband":
     with stp_c:
         setup_btn_type = "secondary" if st.session_state.muse_connected else "primary"
         if st.button("Setup Muse Headset", type=setup_btn_type,
-                     use_container_width=True, key="live_goto_setup"):
+                     width='stretch', key="live_goto_setup"):
             st.session_state.live_subpage = "setup"
             st.rerun()
 
     if st.session_state.muse_connected:
-        stable = st.session_state.get("signal_stable", True)
-        reason = st.session_state.get("signal_reason", "OK")
-        st.success("Muse connected — signal stable") if stable else st.warning(f"Signal issue: {reason}")
+        # Per-electrode contact strip: TP9 / AF7 / AF8 / TP10.
+        # Color-coded by per-channel std over last 1s of the streamer buffer.
+        streamer = st.session_state.get("muse_streamer")
+        ch_std   = streamer.channel_quality() if streamer else None
+        names    = ["TP9", "AF7", "AF8", "TP10"]
+
+        def _ch_color(s_v: float) -> Tuple[str, str]:
+            # Thresholds in volts: <2µV flat, >150µV artefact.
+            if s_v < 2e-6:
+                return "#E05050", "flat"
+            if s_v > 150e-6:
+                return "#E0A050", "noisy"
+            return "#00CC77", "ok"
+
+        if ch_std is None:
+            cells = "".join(
+                f"""<div style='flex:1;padding:10px 8px;text-align:center;
+                                background:rgba(156,163,175,0.05);
+                                border-radius:8px;margin:0 4px'>
+                      <div style='font-family:DM Mono,monospace;font-size:10px;
+                                  color:#6B7280;letter-spacing:0.1em'>{n}</div>
+                      <div style='color:#6B7280;font-size:11px;margin-top:4px'>—</div>
+                    </div>""" for n in names)
+            st.markdown(
+                f"<div style='display:flex;max-width:520px;margin:12px auto'>{cells}</div>"
+                "<p style='text-align:center;color:#6B7280;font-size:11px'>"
+                "Buffering signal…</p>",
+                unsafe_allow_html=True)
+        else:
+            cells = ""
+            all_ok = True
+            for n, s_v in zip(names, ch_std):
+                color, tag = _ch_color(float(s_v))
+                if tag != "ok":
+                    all_ok = False
+                cells += (
+                    f"<div style='flex:1;padding:10px 8px;text-align:center;"
+                    f"background:rgba(255,255,255,0.03);"
+                    f"border-radius:8px;margin:0 4px;"
+                    f"border:1px solid {color}33'>"
+                    f"<div style='font-family:DM Mono,monospace;font-size:10px;"
+                    f"color:#9CA3AF;letter-spacing:0.1em'>{n}</div>"
+                    f"<div style='color:{color};font-family:DM Mono,monospace;"
+                    f"font-size:11px;margin-top:4px;text-transform:uppercase;"
+                    f"letter-spacing:0.05em'>● {tag}</div></div>")
+            st.markdown(
+                f"<div style='display:flex;max-width:520px;margin:12px auto'>{cells}</div>",
+                unsafe_allow_html=True)
+            if all_ok:
+                st.success("Muse connected — all electrodes have good contact")
+            else:
+                st.warning("Adjust the headset — one or more electrodes are flat or noisy.")
     else:
         st.info("Muse not connected — click **Setup Muse Headset** to begin streaming.")
 
@@ -2070,7 +2324,7 @@ if st.session_state.active_tab == "History":
         'A log of every session you\'ve run. Each row shows your average brain load '
         'and how long you focused.</p>',
         unsafe_allow_html=True)
-    st.plotly_chart(make_history_chart(records), use_container_width=True, key="hist_chart")
+    st.plotly_chart(make_history_chart(records), width='stretch', key="hist_chart")
     if records:
         # Full-width table
         rows_html = ""
@@ -2480,7 +2734,7 @@ lowest cross-subject variance of the three towers.
     _, btn_col, _ = st.columns([2, 1, 2])
     with btn_col:
         if st.session_state._run_complete:
-            if st.button("↺ Restart Run", type="primary", use_container_width=True):
+            if st.button("↺ Restart Run", type="primary", width='stretch'):
                 st.session_state.frame_idx     = 0
                 st.session_state._run_complete = False
                 st.session_state._final_stats  = {}
@@ -2491,7 +2745,7 @@ lowest cross-subject variance of the three towers.
             if st.button("▶ Start",
                          disabled=st.session_state.running,
                          type="primary",
-                         use_container_width=True):
+                         width='stretch'):
                 st.session_state.running = True
                 st.rerun()
 
@@ -2663,7 +2917,7 @@ lowest cross-subject variance of the three towers.
     fat_lbl = "ALERT" if smoothed_fat<35 else "TIRED" if smoothed_fat<65 else "FATIGUED"
     ph_fatigue.plotly_chart(
         make_ring(smoothed_fat, fat_color, fat_lbl, "θ/α ratio"),
-        use_container_width=True, key="fatigue_ring")
+        width='stretch', key="fatigue_ring")
     fat_pill_cls = "pill-green" if smoothed_fat<35 else "pill-orange" if smoothed_fat<65 else "pill-red"
     ph_fat_pill.markdown(
         f'<span class="pill {fat_pill_cls}">{fat_lbl}</span>'
@@ -2687,7 +2941,7 @@ lowest cross-subject variance of the three towers.
 
     ph_attn.plotly_chart(
         make_attention_chart(attn_vals),
-        use_container_width=True, key="attn")
+        width='stretch', key="attn")
 
     if frag_demo:
         sq_pct = min(float(attn_vals[2]) * 300, 100)
@@ -2715,17 +2969,17 @@ lowest cross-subject variance of the three towers.
         make_trend_chart(list(st.session_state.time_hist),
                          list(st.session_state.wl_hist),
                          list(st.session_state.fatigue_hist), p_threshold),
-        use_container_width=True, key="trend")
+        width='stretch', key="trend")
 
     _render_accuracy()
 
     if ph_eeg is not None:
         ph_eeg.plotly_chart(make_eeg_chart(eeg_ep),
-                             use_container_width=True, key="eeg")
+                             width='stretch', key="eeg")
     if ph_physio is not None:
         if frag_demo:
             ph_physio.plotly_chart(make_physio_chart(physio_ep),
-                                    use_container_width=True, key="physio")
+                                    width='stretch', key="physio")
         else:
             ph_physio.markdown(
                 '<div style="text-align:center;padding:40px;color:#4B5563;font-size:13px">'
