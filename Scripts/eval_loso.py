@@ -163,6 +163,22 @@ def load_data():
     psd_path = DATA_DIR / "psd_features.npy"
     data["psd"] = np.load(psd_path, mmap_mode="r") if psd_path.exists() else None
 
+    # Filter ambiguous (-1) labels to match train.py (LABEL_AMBIGUOUS=-1).
+    labels_arr = np.asarray(data["labels"])
+    valid_idx  = np.where(labels_arr != -1)[0]
+    n_total = len(labels_arr)
+    n_valid = len(valid_idx)
+    if n_valid < n_total:
+        print(f"  Dropping {n_total - n_valid:,} ambiguous (-1) epochs "
+              f"({(n_total-n_valid)/n_total*100:.1f}%)")
+        data = {
+            "eeg":      np.asarray(data["eeg"])[valid_idx],
+            "physio":   np.asarray(data["physio"])[valid_idx],
+            "labels":   labels_arr[valid_idx],
+            "subjects": np.asarray(data["subjects"])[valid_idx],
+            "psd":      np.asarray(data["psd"])[valid_idx] if data["psd"] is not None else None,
+        }
+
     n = len(data["labels"])
     unique_subjects = sorted(np.unique(data["subjects"]).tolist())
     print(f"  {n:,} epochs · {len(unique_subjects)} subjects · "
@@ -197,16 +213,35 @@ def load_model() -> MultimodalCWSANN:
 # INFERENCE
 # ══════════════════════════════════════════════════════════════════════════════
 
+def compute_physio_stats(physio_np: np.ndarray) -> np.ndarray:
+    """3 physio stats per epoch: HR mean, HR std, log-EDA mean.
+
+    Mirrors train.py::_compute_physio_stats so the 33-dim PSD + 3 stats = 36-dim
+    input expected by FreqEncoder. physio layout: (N, 3, T) [BVP, HR, EDA].
+    """
+    n = physio_np.shape[0]
+    stats = np.zeros((n, 3), dtype=np.float32)
+    stats[:, 0] = physio_np[:, 1, :].mean(axis=1)  # HR mean
+    stats[:, 1] = physio_np[:, 1, :].std(axis=1)   # HR std
+    stats[:, 2] = physio_np[:, 2, :].mean(axis=1)  # EDA mean (pre-log)
+    np.nan_to_num(stats, copy=False)
+    eda = stats[:, 2].copy()
+    stats[:, 2] = np.log(eda - eda.min() + 1e-8)
+    return stats
+
+
 @torch.no_grad()
 def run_sann(model, eeg_np, physio_np, psd_np):
     """Batch inference. Returns (probs, preds) as numpy arrays."""
+    physio_stats = compute_physio_stats(physio_np)
+    freq_np = np.concatenate([psd_np, physio_stats], axis=1).astype(np.float32)
     N = len(eeg_np)
     all_probs, all_preds = [], []
     for start in range(0, N, BATCH_SIZE):
         sl = slice(start, start + BATCH_SIZE)
         eeg_b    = torch.tensor(eeg_np[sl],    dtype=torch.float32).unsqueeze(1).to(DEVICE)
         physio_b = torch.tensor(physio_np[sl], dtype=torch.float32).to(DEVICE)
-        freq_b   = torch.tensor(psd_np[sl],   dtype=torch.float32).to(DEVICE)
+        freq_b   = torch.tensor(freq_np[sl],   dtype=torch.float32).to(DEVICE)
         logits, _ = model(eeg_b, physio_b, freq_b)
         probs = F.softmax(logits, dim=1)[:, 1].cpu().numpy()
         preds = (probs >= 0.5).astype(int)
